@@ -1,0 +1,120 @@
+<!-- Hero Banner -->
+<div class="hero">
+  <div class="hero__content">
+    <p class="hero__eyebrow">NEW ARRIVALS 2025</p>
+    <h1 class="hero__title">Style That<br />Speaks For You</h1>
+    <p class="hero__sub">Discover the latest fashion trends from top brands.</p>
+    <div class="hero__ctas">
+      <a routerLink="/products" class="btn btn-primary btn-lg">Shop Women</a>
+      <a routerLink="/products" class="btn btn-outline btn-lg hero__btn-outline">Shop Men</a>
+    </div>
+  </div>
+  <div class="hero__badge">
+    <span class="hero__badge-text">UP TO<br /><strong>70% OFF</strong></span>
+  </div>
+</div>
+
+<!-- Offer Strip -->
+<div class="offer-strip">
+  <div class="container offer-strip__inner">
+    <div class="offer-item">🚚 Free Delivery on orders above ₹499</div>
+    <div class="offer-item">↩️ Easy 30-day returns</div>
+    <div class="offer-item">🔒 100% Secure payments</div>
+    <div class="offer-item">✅ 100% Authentic products</div>
+  </div>
+</div>
+
+<div class="container page-body">
+
+  <!-- Categories -->
+  @if (categories().length > 0) {
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Shop by Category</h2>
+        <a routerLink="/products" class="see-all-link">View All →</a>
+      </div>
+      <div class="cat-grid">
+        @for (cat of categories(); track cat.id) {
+          <a [routerLink]="['/products']" [queryParams]="{ categoryId: cat.id }" class="cat-card">
+            <div class="cat-card__circle">
+              <span class="cat-card__icon">{{ catIcon(cat.name) }}</span>
+            </div>
+            <span class="cat-card__name">{{ cat.name }}</span>
+          </a>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- Featured Products -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Trending Now</h2>
+      <a routerLink="/products" class="see-all-link">See All →</a>
+    </div>
+
+    @if (loading()) {
+      <div class="loading-grid">
+        @for (s of [1,2,3,4,5,6,7,8]; track s) {
+          <div class="skeleton-card">
+            <div class="skeleton-img"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+          </div>
+        }
+      </div>
+    } @else if (products().length === 0) {
+      <div class="empty-state"><p>No products available yet.</p></div>
+    } @else {
+      <div class="product-grid">
+        @for (p of products(); track p.id) {
+          <div class="product-card" [routerLink]="['/products', p.id]">
+            <button class="product-card__wishlist" (click)="$event.stopPropagation()">♡</button>
+            @if (p.images.length > 0) {
+              <img class="product-card__img" [src]="p.images[0].url" [alt]="p.name" />
+            } @else {
+              <div class="product-card__no-img">👗</div>
+            }
+            <div class="product-card__body">
+              <p class="product-card__brand">{{ p.name }}</p>
+              <p class="product-card__name">{{ p.description || 'Premium Quality' }}</p>
+              <div class="product-card__price-row">
+                <span class="product-card__price">₹{{ p.price | number:'1.0-0' }}</span>
+              </div>
+              @if (p.averageRating > 0) {
+                <div class="product-card__rating">
+                  <span class="rating-chip">{{ p.averageRating | number:'1.1-1' }} ★</span>
+                  <span class="rating-count">({{ p.reviewsCount }})</span>
+                </div>
+              }
+            </div>
+            <div class="product-card__actions">
+              <button class="btn btn-primary btn-block btn-sm" (click)="addToCart($event, p)">
+                ADD TO BAG
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <!-- Banner Section -->
+  <section class="banner-section">
+    <div class="banner-card banner-card--pink">
+      <div>
+        <p class="banner-card__eyebrow">WOMEN</p>
+        <h3 class="banner-card__title">New Season,<br/>New Style</h3>
+        <a routerLink="/products" class="banner-card__link">Shop Now →</a>
+      </div>
+    </div>
+    <div class="banner-card banner-card--dark">
+      <div>
+        <p class="banner-card__eyebrow">MEN</p>
+        <h3 class="banner-card__title">Bold Looks<br/>For Him</h3>
+        <a routerLink="/products" class="banner-card__link">Explore →</a>
+      </div>
+    </div>
+  </section>
+
+</div>

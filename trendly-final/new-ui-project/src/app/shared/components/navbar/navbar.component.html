@@ -1,0 +1,84 @@
+<header class="navbar">
+  <!-- Top announcement strip -->
+  <div class="navbar__top">
+    <div class="navbar__top-inner container">
+      <span>Free delivery on orders above ₹499</span>
+      <span class="sep">·</span>
+      <span>Easy 30-day returns</span>
+      <span class="sep">·</span>
+      <span>100% authentic products</span>
+    </div>
+  </div>
+
+  <!-- Main bar -->
+  <div class="navbar__main">
+    <div class="navbar__inner container">
+
+      <!-- Logo -->
+      <a routerLink="/" class="navbar__logo">Trendly</a>
+
+      <!-- Category links -->
+      <nav class="navbar__cats">
+        @for (cat of navCategories; track cat.key) {
+          <a class="navbar__cat-link" (click)="navigateToCategory(cat.key)" style="cursor:pointer">{{ cat.label }}</a>
+        }
+        <a routerLink="/products" [queryParams]="{search: 'sale'}" class="navbar__cat-link navbar__cat-link--sale">SALE 🔥</a>
+      </nav>
+
+      <!-- Search — submits to /products?search=query -->
+      <form class="navbar__search" (submit)="submitSearch($event)">
+        <span class="navbar__search-icon">🔍</span>
+        <input class="navbar__search-input" type="text"
+               placeholder="Search for products, brands and more"
+               [value]="searchQuery"
+               (input)="onSearch($event)" />
+      </form>
+
+      <!-- Actions -->
+      <div class="navbar__actions">
+        @if (!auth.isLoggedIn()) {
+          <a routerLink="/login" class="navbar__action">
+            <span class="navbar__action-icon">👤</span>
+            <span class="navbar__action-label">Login</span>
+          </a>
+        } @else {
+          <div class="navbar__action navbar__action--user">
+            <span class="navbar__action-icon">👤</span>
+            <span class="navbar__action-label">{{ (auth.currentUser()?.email ?? '').split('@')[0] }}</span>
+            <div class="navbar__dropdown">
+              @if (auth.userRole() === 'User') {
+                <a routerLink="/profile" class="navbar__dropdown-item">My Profile</a>
+                <a routerLink="/orders"  class="navbar__dropdown-item">My Orders</a>
+              }
+              @if (auth.isAdmin()) {
+                <a routerLink="/admin" class="navbar__dropdown-item navbar__dropdown-item--admin">Admin Panel</a>
+              }
+              <button class="navbar__dropdown-item navbar__dropdown-item--logout" (click)="auth.logout()">
+                Logout
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (auth.isLoggedIn() && auth.userRole() === 'User') {
+          <a routerLink="/cart" class="navbar__action navbar__cart-action">
+            <span class="navbar__action-icon">🛍️</span>
+            <span class="navbar__action-label">Bag</span>
+            @if (cart.itemCount() > 0) {
+              <span class="navbar__cart-badge">{{ cart.itemCount() }}</span>
+            }
+          </a>
+        }
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Mobile category strip (visible on small screens) -->
+  <div class="navbar__mobile-cats">
+    @for (cat of navCategories; track cat.key) {
+      <a class="navbar__cat-link" (click)="navigateToCategory(cat.key)" style="cursor:pointer">{{ cat.label }}</a>
+    }
+    <a routerLink="/products" [queryParams]="{search: 'sale'}" class="navbar__cat-link navbar__cat-link--sale">SALE 🔥</a>
+  </div>
+</header>

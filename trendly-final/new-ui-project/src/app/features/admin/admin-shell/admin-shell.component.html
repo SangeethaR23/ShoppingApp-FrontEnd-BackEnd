@@ -1,0 +1,19 @@
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sidebar-header">
+      <p class="sidebar-brand">Trendly</p>
+      <p class="sidebar-role">Admin Panel</p>
+    </div>
+    <a routerLink="/admin/dashboard"  routerLinkActive="active">📊 Dashboard</a>
+    <a routerLink="/admin/products"   routerLinkActive="active">🛍️ Products</a>
+    <a routerLink="/admin/categories" routerLinkActive="active">🗂️ Categories</a>
+    <a routerLink="/admin/inventory"  routerLinkActive="active">📦 Inventory</a>
+    <a routerLink="/admin/orders"     routerLinkActive="active">📋 Orders</a>
+    <a routerLink="/admin/users"      routerLinkActive="active">👥 Users</a>
+    <div class="sidebar-spacer"></div>
+    <a routerLink="/" class="store-link">🏠 View Store</a>
+  </aside>
+  <main class="admin-content">
+    <router-outlet />
+  </main>
+</div>

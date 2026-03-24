@@ -1,0 +1,151 @@
+<div class="container page-body">
+  <h1 class="page-title">Checkout</h1>
+
+  @if (cartEmpty) {
+    <div class="empty-state card">
+      <p>Your cart is empty. <a routerLink="/products">Shop now</a></p>
+    </div>
+  } @else {
+    <div class="checkout-layout">
+
+      <!-- Left column -->
+      <div class="left-col">
+
+        <!-- Address -->
+        <div class="card section-card">
+          <h2 class="section-title">📍 Delivery Address</h2>
+
+          @if (addresses().length === 0) {
+            <p class="no-addr-msg">No saved addresses. Add one below.</p>
+          } @else {
+            <div class="addr-list">
+              @for (addr of addresses(); track addr.id) {
+                <label class="addr-option" [class.selected]="selectedAddressId() === addr.id">
+                  <input type="radio"
+                         [value]="addr.id"
+                         [(ngModel)]="selectedAddressIdVal"
+                         (change)="selectedAddressId.set(addr.id)"
+                         class="addr-radio" />
+                  <div>
+                    <p class="addr-name">
+                      {{ addr.fullName }}
+                      @if (addr.label) { <span class="addr-label">({{ addr.label }})</span> }
+                    </p>
+                    <p class="addr-line">
+                      {{ addr.line1 }}{{ addr.line2 ? ', ' + addr.line2 : '' }},
+                      {{ addr.city }}, {{ addr.state }} {{ addr.postalCode }}, {{ addr.country }}
+                    </p>
+                    @if (addr.phone) {
+                      <p class="addr-phone">📞 {{ addr.phone }}</p>
+                    }
+                  </div>
+                </label>
+              }
+            </div>
+          }
+
+          <button class="btn btn-secondary btn-sm toggle-addr-btn"
+                  (click)="showAddressForm.set(!showAddressForm())">
+            {{ showAddressForm() ? '− Hide' : '+ Add New Address' }}
+          </button>
+
+          @if (showAddressForm()) {
+            <div class="new-addr-form">
+              <div class="two-col">
+                <div class="form-group">
+                  <label class="form-label">Full Name *</label>
+                  <input class="form-control" [(ngModel)]="newAddr.fullName" placeholder="John Doe" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Phone</label>
+                  <input class="form-control" [(ngModel)]="newAddr.phone" placeholder="+91..." />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Address Line 1 *</label>
+                <input class="form-control" [(ngModel)]="newAddr.line1" placeholder="Street, Apartment..." />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Line 2</label>
+                <input class="form-control" [(ngModel)]="newAddr.line2" placeholder="Optional" />
+              </div>
+              <div class="three-col">
+                <div class="form-group">
+                  <label class="form-label">City *</label>
+                  <input class="form-control" [(ngModel)]="newAddr.city" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">State *</label>
+                  <input class="form-control" [(ngModel)]="newAddr.state" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Postal Code *</label>
+                  <input class="form-control" [(ngModel)]="newAddr.postalCode" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Country</label>
+                <input class="form-control" [(ngModel)]="newAddr.country" />
+              </div>
+              <button class="btn btn-primary btn-sm" (click)="saveAddress()" [disabled]="savingAddress()">
+                {{ savingAddress() ? 'Saving...' : 'Save Address' }}
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Payment -->
+        <div class="card section-card">
+          <h2 class="section-title">💳 Payment Method</h2>
+          <div class="payment-list">
+            @for (method of paymentMethods; track method.value) {
+              <label class="addr-option" [class.selected]="paymentType === method.value">
+                <input type="radio" [value]="method.value" [(ngModel)]="paymentType" class="addr-radio" />
+                <span>{{ method.label }}</span>
+              </label>
+            }
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Order Summary -->
+      <div class="card summary-panel">
+        <h2 class="summary-title">Order Summary</h2>
+
+        @for (item of cartSvc.cart()!.items; track item.id) {
+          <div class="summary-item">
+            <span class="summary-item__name">{{ item.productName }} × {{ item.quantity }}</span>
+            <span class="summary-item__price">₹{{ item.lineTotal | number:'1.2-2' }}</span>
+          </div>
+        }
+
+        <div class="summary-divider"></div>
+        <div class="summary-row">
+          <span>Subtotal</span><span>₹{{ cartSvc.subTotal() | number:'1.2-2' }}</span>
+        </div>
+        <div class="summary-row success-row">
+          <span>Shipping</span><span>FREE</span>
+        </div>
+        <div class="summary-total">
+          <span>Total</span><span>₹{{ cartSvc.subTotal() | number:'1.2-2' }}</span>
+        </div>
+
+        <button class="btn btn-primary btn-block btn-lg place-btn"
+                [disabled]="!selectedAddressId() || !paymentType || placing()"
+                (click)="placeOrder()">
+          @if (placing()) {
+            <span class="spinner btn-spinner"></span> Placing Order...
+          } @else {
+            Place Order
+          }
+        </button>
+
+        @if (!selectedAddressId()) {
+          <p class="addr-warning">Please select a delivery address.</p>
+        }
+      </div>
+
+    </div>
+  }
+</div>

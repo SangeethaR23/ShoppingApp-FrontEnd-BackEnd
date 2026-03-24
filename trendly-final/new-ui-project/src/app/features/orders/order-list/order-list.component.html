@@ -1,0 +1,89 @@
+<div class="container page-body">
+  <h1 class="page-title">My Orders</h1>
+
+  <!-- Filters bar -->
+  <div class="filter-bar">
+    <select class="form-control filter-select" [(ngModel)]="filterStatus" (change)="page.set(1); load()">
+      <option value="">All Statuses</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+
+    <input class="form-control date-input" type="date" placeholder="From"
+           [(ngModel)]="filterFrom" (change)="page.set(1); load()" />
+
+    <input class="form-control date-input" type="date" placeholder="To"
+           [(ngModel)]="filterTo" (change)="page.set(1); load()" />
+
+    <select class="form-control filter-select" [(ngModel)]="sortDesc" (change)="page.set(1); load()">
+      <option [ngValue]="true">Newest First</option>
+      <option [ngValue]="false">Oldest First</option>
+    </select>
+
+    <button class="btn btn-blue btn-sm" (click)="clearFilters()">Clear</button>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-msg">Loading your orders...</div>
+  } @else if (orders().length === 0) {
+    <div class="empty-state card">
+      <p class="empty-icon">📦</p>
+      <h3>No orders found</h3>
+      <p>Try adjusting your filters or start shopping.</p>
+      <a routerLink="/products" class="btn btn-primary shop-btn">START SHOPPING</a>
+    </div>
+  } @else {
+    <div class="orders-list">
+      @for (order of orders(); track order.id) {
+        <div class="card order-row">
+          <div class="order-row__col">
+            <p class="order-row__label">ORDER #</p>
+            <p class="order-row__value">{{ order.orderNumber }}</p>
+          </div>
+          <div class="order-row__col">
+            <p class="order-row__label">PLACED ON</p>
+            <p class="order-row__value sm">{{ order.placedAtUtc | date:'mediumDate' }}</p>
+          </div>
+          <div class="order-row__col">
+            <p class="order-row__label">TOTAL</p>
+            <p class="order-row__value">₹{{ order.total | number:'1.0-0' }}</p>
+          </div>
+          <div class="order-row__col">
+            <p class="order-row__label">ITEMS</p>
+            <p class="order-row__value sm">{{ order.itemsCount }}</p>
+          </div>
+          <div class="order-row__col">
+            <span class="status-pill status-{{ order.status | lowercase }}">{{ order.status }}</span>
+          </div>
+          <div class="order-row__actions">
+            <a [routerLink]="['/orders', order.id]" class="btn btn-blue btn-sm">View Details</a>
+            @if (order.status === 'Pending' || order.status === 'Processing') {
+              <button class="btn btn-red btn-sm" (click)="cancelOrder(order.id)">Cancel Order</button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button class="page-btn" [disabled]="page() === 1" (click)="goToPage(page() - 1)">‹ Prev</button>
+        <span class="page-info">Page {{ page() }} of {{ totalPages() }}</span>
+        <button class="page-btn" [disabled]="page() === totalPages()" (click)="goToPage(page() + 1)">Next ›</button>
+      </div>
+    }
+  }
+</div>
+
+<!-- Cancel Confirmation Dialog -->
+<app-confirm-dialog
+  [visible]="showConfirm()"
+  [title]="confirmTitle"
+  [message]="confirmMessage"
+  confirmLabel="Yes, Cancel Order"
+  cancelLabel="Keep Order"
+  [danger]="true"
+  icon="⚠️"
+  (confirmed)="onCancelConfirmed()"
+  (cancelled)="onCancelDismissed()">
+</app-confirm-dialog>

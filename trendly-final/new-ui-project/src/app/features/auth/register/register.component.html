@@ -1,0 +1,46 @@
+<div class="auth-page">
+  <div class="auth-left">
+    <div class="auth-left__logo">Trendly</div>
+    <p class="auth-left__tagline">Join Millions of<br/>Fashion Lovers</p>
+    <p class="auth-left__sub">Get exclusive deals, early access and more.</p>
+  </div>
+  <div class="auth-right">
+    <div class="auth-card">
+      <h2 class="auth-title">Create Account</h2>
+      <p class="auth-sub">Start your fashion journey today</p>
+      <form (ngSubmit)="onSubmit()">
+        <div class="name-row">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input class="form-control" [(ngModel)]="firstName" name="firstName" placeholder="John" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input class="form-control" [(ngModel)]="lastName" name="lastName" placeholder="Doe" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address *</label>
+          <input class="form-control" type="email" [(ngModel)]="email" name="email" required placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mobile Number</label>
+          <input class="form-control" type="tel" [(ngModel)]="phone" name="phone" placeholder="+91 9999999999" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password *</label>
+          <input class="form-control" type="password" [(ngModel)]="password" name="password" required placeholder="Minimum 6 characters" />
+        </div>
+        @if (errorMsg()) {
+          <p class="form-error error-msg">{{ errorMsg() }}</p>
+        }
+        <button type="submit" class="btn btn-primary btn-block btn-lg" [disabled]="loading()">
+          @if (loading()) { CREATING... } @else { CREATE ACCOUNT }
+        </button>
+      </form>
+      <p class="auth-footer">
+        Already have an account? <a routerLink="/login">Sign In</a>
+      </p>
+    </div>
+  </div>
+</div>

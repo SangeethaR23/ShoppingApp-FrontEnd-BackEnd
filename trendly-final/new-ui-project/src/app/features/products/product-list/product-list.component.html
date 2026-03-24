@@ -1,0 +1,135 @@
+<div class="plp-page">
+  <!-- Filter sidebar -->
+  <aside class="filters-sidebar">
+    <div class="filters-header">
+      <h3 class="filters-title">FILTERS</h3>
+      <button class="btn btn-link" (click)="clearFilters()">CLEAR ALL</button>
+    </div>
+
+    <div class="filter-block">
+      <h4 class="filter-block__title">Search</h4>
+      <input class="form-control" [(ngModel)]="searchText" placeholder="Search products..." (input)="onSearch()" />
+    </div>
+
+    <div class="filter-block">
+      <h4 class="filter-block__title">Category</h4>
+      <div class="filter-options">
+        <label class="filter-option">
+          <input type="radio" [value]="null" [(ngModel)]="selectedCategoryId" (change)="onFilter()" />
+          <span>All Categories</span>
+        </label>
+        @for (cat of categories(); track cat.id) {
+          <label class="filter-option">
+            <input type="radio" [value]="cat.id" [(ngModel)]="selectedCategoryId" (change)="onFilter()" />
+            <span>{{ cat.name }}</span>
+          </label>
+        }
+      </div>
+    </div>
+
+    <div class="filter-block">
+      <h4 class="filter-block__title">Price Range</h4>
+      <div class="price-inputs">
+        <input class="form-control" type="number" [(ngModel)]="priceMin" placeholder="Min ₹" (change)="onFilter()" />
+        <span class="price-sep">–</span>
+        <input class="form-control" type="number" [(ngModel)]="priceMax" placeholder="Max ₹" (change)="onFilter()" />
+      </div>
+    </div>
+
+    <div class="filter-block">
+      <h4 class="filter-block__title">Customer Rating</h4>
+      <div class="filter-options">
+        @for (r of [4,3,2]; track r) {
+          <label class="filter-option">
+            <input type="radio" [value]="r" [(ngModel)]="ratingMin" (change)="onFilter()" />
+            <span class="stars">{{ '★'.repeat(r) }}{{ '☆'.repeat(5-r) }}</span>
+            <span class="rating-label"> & above</span>
+          </label>
+        }
+        <label class="filter-option">
+          <input type="radio" [value]="null" [(ngModel)]="ratingMin" (change)="onFilter()" />
+          <span>All</span>
+        </label>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="plp-main">
+    <!-- Toolbar -->
+    <div class="plp-toolbar">
+      <p class="result-count">
+        @if (!loading()) { <strong>{{ totalCount() }}</strong> products found }
+      </p>
+      <div class="sort-row">
+        <span class="sort-label">Sort by:</span>
+        <select class="sort-select" [(ngModel)]="sortBy" (change)="onFilter()">
+          <option value="newest">Recommended</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="rating">Customer Rating</option>
+          <option value="name">Name A-Z</option>
+        </select>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="product-grid">
+        @for (s of [1,2,3,4,5,6,7,8,9,10]; track s) {
+          <div class="skeleton-card">
+            <div class="skeleton-img"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+          </div>
+        }
+      </div>
+    } @else if (products().length === 0) {
+      <div class="empty-state">
+        <p style="font-size:48px;margin-bottom:16px">🔍</p>
+        <h3>No products found</h3>
+        <p>Try adjusting your filters.</p>
+      </div>
+    } @else {
+      <div class="product-grid">
+        @for (p of products(); track p.id) {
+          <div class="product-card">
+            <button class="product-card__wishlist" (click)="$event.stopPropagation()">♡</button>
+            <div [routerLink]="['/products', p.id]" class="product-card__link">
+              @if (p.images.length > 0) {
+                <img class="product-card__img" [src]="p.images[0].url" [alt]="p.name" />
+              } @else {
+                <div class="product-card__no-img">👗</div>
+              }
+              <div class="product-card__body">
+                <p class="product-card__brand">{{ p.name }}</p>
+                <p class="product-card__name">{{ p.description || 'Premium Quality' }}</p>
+                <div class="product-card__price-row">
+                  <span class="product-card__price">₹{{ p.price | number:'1.0-0' }}</span>
+                </div>
+                @if (p.averageRating > 0) {
+                  <div class="product-card__rating">
+                    <span class="rating-chip">{{ p.averageRating | number:'1.1-1' }} ★</span>
+                    <span class="rating-count">({{ p.reviewsCount }})</span>
+                  </div>
+                }
+              </div>
+            </div>
+            <div class="product-card__actions">
+              <button class="btn btn-primary btn-block btn-sm" (click)="addToCart(p)">ADD TO BAG</button>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (totalPages() > 1) {
+        <div class="pagination">
+          <button class="page-btn" [disabled]="page() === 1" (click)="goToPage(page() - 1)">‹</button>
+          @for (pg of pageNumbers(); track pg) {
+            <button class="page-btn" [class.active]="pg === page()" (click)="goToPage(pg)">{{ pg }}</button>
+          }
+          <button class="page-btn" [disabled]="page() === totalPages()" (click)="goToPage(page() + 1)">›</button>
+        </div>
+      }
+    }
+  </div>
+</div>

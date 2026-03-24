@@ -1,0 +1,188 @@
+<div class="container page-body">
+  <h1 class="page-title">My Account</h1>
+
+  <!-- Tab nav -->
+  <div class="tab-nav">
+    @for (tab of tabs; track tab.id) {
+      <button class="tab-btn" [class.active]="activeTab() === tab.id" (click)="activeTab.set(tab.id)">
+        {{ tab.label }}
+      </button>
+    }
+  </div>
+
+  <!-- Profile Tab -->
+  @if (activeTab() === 'profile') {
+    <div class="card tab-card">
+      <h2 class="card-title">Profile Information</h2>
+      @if (profile()) {
+        <form (ngSubmit)="saveProfile()">
+          <div class="two-col">
+            <div class="form-group">
+              <label class="form-label">First Name</label>
+              <input class="form-control" [(ngModel)]="profileForm.firstName" name="fn" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Name</label>
+              <input class="form-control" [(ngModel)]="profileForm.lastName" name="ln" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="form-control disabled-input" [value]="profile()!.email" disabled />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input class="form-control" [(ngModel)]="profileForm.phone" name="ph" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <input class="form-control disabled-input" [value]="profile()!.role" disabled />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date of Birth</label>
+            <input class="form-control" type="date" [(ngModel)]="profileForm.dateOfBirth" name="dob" />
+          </div>
+          <button type="submit" class="btn btn-green" [disabled]="savingProfile()">
+            {{ savingProfile() ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </form>
+      }
+    </div>
+  }
+
+  <!-- Password Tab -->
+  @if (activeTab() === 'password') {
+    <div class="card tab-card narrow">
+      <h2 class="card-title">Change Password</h2>
+      <form (ngSubmit)="changePassword()">
+        <div class="form-group">
+          <label class="form-label">Current Password</label>
+          <input class="form-control" type="password" [(ngModel)]="pwForm.currentPassword" name="cp" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <input class="form-control" type="password" [(ngModel)]="pwForm.newPassword" name="np" required />
+        </div>
+        <button type="submit" class="btn btn-green" [disabled]="changingPw()">
+          {{ changingPw() ? 'Changing...' : 'Change Password' }}
+        </button>
+      </form>
+    </div>
+  }
+
+  <!-- Addresses Tab -->
+  @if (activeTab() === 'addresses') {
+    <div>
+      <div class="addr-header">
+        <h2 class="card-title" style="margin-bottom:0">Saved Addresses</h2>
+        <button class="btn btn-primary btn-sm" (click)="openAddressModal()">+ Add Address</button>
+      </div>
+
+      @if (addresses().length === 0) {
+        <div class="empty-state card"><p>No addresses saved yet.</p></div>
+      } @else {
+        <div class="addr-grid">
+          @for (addr of addresses(); track addr.id) {
+            <div class="card addr-card">
+              @if (addr.label) {
+                <span class="addr-badge">{{ addr.label }}</span>
+              }
+              <p class="addr-name">{{ addr.fullName }}</p>
+              @if (addr.phone) { <p class="addr-detail">{{ addr.phone }}</p> }
+              <p class="addr-detail">
+                {{ addr.line1 }}{{ addr.line2 ? ', ' + addr.line2 : '' }}<br />
+                {{ addr.city }}, {{ addr.state }} {{ addr.postalCode }}<br />
+                {{ addr.country }}
+              </p>
+              <div class="addr-actions">
+                <button class="btn btn-blue btn-sm" (click)="editAddress(addr)">Edit</button>
+                <button class="btn btn-red btn-sm" (click)="deleteAddress(addr.id)">Delete</button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Orders Tab -->
+  @if (activeTab() === 'orders') {
+    <div class="card tab-card">
+      <p>View and manage your orders.</p>
+      <a routerLink="/orders" class="btn btn-primary orders-link">Go to My Orders →</a>
+    </div>
+  }
+</div>
+
+<!-- Address Modal -->
+@if (showAddrModal()) {
+  <div class="modal-backdrop" (click)="closeAddrModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="modal-title">{{ editingAddr ? 'Edit Address' : 'Add Address' }}</span>
+        <button class="modal-close" (click)="closeAddrModal()">✕</button>
+      </div>
+      <form (ngSubmit)="saveAddress()">
+        <div class="form-group">
+          <label class="form-label">Label</label>
+          <input class="form-control" [(ngModel)]="addrForm.label" name="lbl" placeholder="Home, Work..." />
+        </div>
+        <div class="two-col">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input class="form-control" [(ngModel)]="addrForm.fullName" name="fn" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input class="form-control" [(ngModel)]="addrForm.phone" name="ph" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Address Line 1 *</label>
+          <input class="form-control" [(ngModel)]="addrForm.line1" name="l1" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Line 2</label>
+          <input class="form-control" [(ngModel)]="addrForm.line2" name="l2" />
+        </div>
+        <div class="three-col">
+          <div class="form-group">
+            <label class="form-label">City *</label>
+            <input class="form-control" [(ngModel)]="addrForm.city" name="cy" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">State *</label>
+            <input class="form-control" [(ngModel)]="addrForm.state" name="st" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Postal Code *</label>
+            <input class="form-control" [(ngModel)]="addrForm.postalCode" name="pc" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Country</label>
+          <input class="form-control" [(ngModel)]="addrForm.country" name="co" />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-red" (click)="closeAddrModal()">Cancel</button>
+          <button type="submit" class="btn btn-green" [disabled]="savingAddr()">
+            {{ savingAddr() ? 'Saving...' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- Confirm Delete Address Dialog -->
+<app-confirm-dialog
+  [visible]="showConfirm()"
+  title="Delete Address"
+  message="Are you sure you want to delete this address?"
+  confirmLabel="Delete"
+  cancelLabel="Cancel"
+  [danger]="true"
+  icon="🗑️"
+  (confirmed)="onDeleteAddressConfirmed()"
+  (cancelled)="onDeleteAddressCancelled()">
+</app-confirm-dialog>

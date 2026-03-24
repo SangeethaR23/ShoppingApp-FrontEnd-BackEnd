@@ -1,0 +1,15 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ShoppingWebApi.Models.DTOs.Categories
+{
+    public class CategoryCreateDto
+    {
+        [Required, MaxLength(120)]
+        public string Name { get; set; } = null!;
+
+        [MaxLength(500)]
+        public string? Description { get; set; }
+
+        public int? ParentCategoryId { get; set; }
+    }
+}

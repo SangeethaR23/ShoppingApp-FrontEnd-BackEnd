@@ -1,0 +1,149 @@
+<div class="pdp-page container">
+  @if (productResource.isLoading()) {
+    <div class="pdp-skeleton">
+      <div class="skeleton-gallery"></div>
+      <div class="skeleton-info">
+        <div class="skeleton-line tall"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
+      </div>
+    </div>
+  } @else if (productResource.error()) {
+    <div class="empty-state">
+      <h3>Product not found</h3>
+      <a routerLink="/products" class="btn btn-primary" style="margin-top:16px;display:inline-block">← Back</a>
+    </div>
+  } @else if (productResource.value(); as product) {
+
+    <p class="breadcrumb">
+      <a routerLink="/">Home</a>
+      <span class="breadcrumb-sep">›</span>
+      <a routerLink="/products">Products</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>{{ product.name }}</span>
+    </p>
+
+    <div class="pdp-layout">
+
+      <!-- Gallery -->
+      <div class="pdp-gallery">
+        @if (product.images.length > 1) {
+          <div class="pdp-thumbs">
+            @for (img of product.images; track img.id) {
+              <div class="pdp-thumb" [class.active]="selectedImage() === img.url" (click)="selectedImage.set(img.url)">
+                <img [src]="img.url" [alt]="product.name" />
+              </div>
+            }
+          </div>
+        }
+        <div class="pdp-main-img-wrap">
+          @if (product.images.length > 0) {
+            <img class="pdp-main-img" [src]="selectedImage()" [alt]="product.name" />
+          } @else {
+            <div class="pdp-no-img">👗</div>
+          }
+          <!-- <button class="pdp-wishlist-btn">♡ Wishlist</button> -->
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="pdp-info">
+        <h1 class="pdp-name">{{ product.name }}</h1>
+        <p class="pdp-sku">SKU: {{ product.sku }}</p>
+
+        @if (product.averageRating > 0) {
+          <div class="pdp-rating-row">
+            <span class="rating-chip-lg">{{ product.averageRating | number:'1.1-1' }} ★</span>
+            <span class="pdp-review-count">{{ product.reviewsCount }} ratings</span>
+          </div>
+        }
+
+        <div class="pdp-price-block">
+          <span class="pdp-price">₹{{ product.price | number:'1.0-0' }}</span>
+          <span class="pdp-free-delivery">FREE Delivery</span>
+        </div>
+
+        <p class="pdp-instock">✓ In Stock — Ready to ship</p>
+
+        @if (product.description) {
+          <div class="pdp-desc">
+            <h3 class="pdp-desc__title">Product Details</h3>
+            <p>{{ product.description }}</p>
+          </div>
+        }
+
+        <!-- Qty -->
+        <div class="pdp-qty-row">
+          <span class="pdp-qty-label">Quantity:</span>
+          <div class="qty-control">
+            <button class="qty-btn" (click)="decQty()">−</button>
+            <span class="qty-val">{{ qty }}</span>
+            <button class="qty-btn" (click)="incQty()">+</button>
+          </div>
+        </div>
+
+        <!-- CTAs -->
+        <div class="pdp-ctas">
+          <button class="btn btn-primary btn-lg pdp-cta-btn" (click)="addToCart(product)" [disabled]="addingToCart()">
+            @if (addingToCart()) { ADDING... } @else { ADD TO BAG }
+          </button>
+          <button class="btn btn-secondary btn-lg pdp-cta-btn" (click)="buyNow(product)">
+            BUY NOW
+          </button>
+        </div>
+
+        <!-- Delivery info -->
+        <div class="pdp-delivery-box">
+          <div class="pdp-delivery-item">🚚 <strong>Free Delivery</strong> on orders above ₹499</div>
+          <div class="pdp-delivery-item">↩️ <strong>Easy Returns</strong> within 30 days</div>
+          <div class="pdp-delivery-item">🔒 <strong>Secure Payment</strong> guaranteed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reviews -->
+    <div class="pdp-reviews">
+      <h2 class="pdp-reviews__title">Ratings & Reviews</h2>
+
+      @if (auth.isLoggedIn() && auth.userRole() === 'User') {
+        <div class="write-review">
+          <h3 class="write-review__title">Rate this product</h3>
+          <div class="star-picker">
+            @for (star of [1,2,3,4,5]; track star) {
+              <span class="star-pick" [class.active]="star <= reviewRating" (click)="reviewRating = star">★</span>
+            }
+          </div>
+          <textarea class="form-control" [(ngModel)]="reviewComment" rows="3" placeholder="Tell others what you think..."></textarea>
+          <button class="btn btn-primary btn-sm" style="margin-top:12px" (click)="submitReview(product.id)" [disabled]="submittingReview()">
+            @if (submittingReview()) { SUBMITTING... } @else { SUBMIT REVIEW }
+          </button>
+        </div>
+      }
+
+      @if (reviewsResource.isLoading()) {
+        <p class="reviews-loading">Loading reviews...</p>
+      } @else {
+        @let reviewItems = reviewsResource.value()?.items ?? [];
+        @if (reviewItems.length === 0) {
+          <p class="no-reviews">No reviews yet. Be the first to review!</p>
+        } @else {
+          <div class="reviews-list">
+            @for (r of reviewItems; track r.id) {
+              <div class="review-card">
+                <div class="review-card__header">
+                  <span class="rating-chip">{{ r.rating }} ★</span>
+                  <span class="review-author">{{ r.userName || 'Verified Buyer' }}</span>
+                  <span class="review-date">{{ r.createdUtc | date:'mediumDate' }}</span>
+                </div>
+                @if (r.comment) {
+                  <p class="review-text">{{ r.comment }}</p>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+
+  }
+</div>
