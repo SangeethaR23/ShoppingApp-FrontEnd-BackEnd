@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ShoppingWebApi.Models;
 using ShoppingWebApi.Models.DTOs.Addresses;
+using ShoppingWebApi.Models.DTOs.AdminLogs;
 using ShoppingWebApi.Models.DTOs.Cart;
 using ShoppingWebApi.Models.DTOs.Categories;
 using ShoppingWebApi.Models.DTOs.Common;
@@ -46,6 +47,9 @@ namespace ShoppingWebApi.Mappings
             //Review
             CreateMap<Review, ReviewReadDto>()
                 .ForMember(d => d.UserName, opt => opt.Ignore());
+            //LogsForAdmin
+            CreateMap<LogEntry, LogEntryReadDto>();
+
         }
     }
 }
