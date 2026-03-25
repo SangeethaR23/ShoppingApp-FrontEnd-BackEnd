@@ -12,5 +12,7 @@ namespace ShoppingWebApi.Models.DTOs.Orders
 
         [Required(ErrorMessage = "Payment type is required")]
         public string PaymentType { get; set; } = string.Empty;
+
+        public decimal WalletUseAmount { get; set; } = 0m;
     }
 }

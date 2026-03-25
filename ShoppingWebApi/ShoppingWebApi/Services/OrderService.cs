@@ -10,6 +10,7 @@ using ShoppingWebApi.Interfaces;
 using ShoppingWebApi.Models;
 using ShoppingWebApi.Models.DTOs.Common;
 using ShoppingWebApi.Models.DTOs.Orders;
+using ShoppingWebApi.Models.DTOs.Return;
 using ShoppingWebApi.Models.enums; 
 
 namespace ShoppingWebApi.Services
@@ -25,7 +26,7 @@ namespace ShoppingWebApi.Services
         private readonly IRepository<int, Inventory> _inventoryRepo;
         private readonly IRepository<int, Payment> _paymentRepo;
         private readonly IRepository<int, Refund> _refundRepo;
-
+        private readonly IRepository<int, ReturnRequest> _returnRepo;
         private readonly ILogWriter _loggerDb;             
         private readonly ILogger<OrderService> _logger;        
 
@@ -39,6 +40,7 @@ namespace ShoppingWebApi.Services
             IRepository<int, Inventory> inventoryRepo,
             IRepository<int, Payment> paymentRepo,
             IRepository<int, Refund> refundRepo,
+            IRepository<int,ReturnRequest> returnRepo,
             ILogWriter loggerDb,
             ILogger<OrderService> logger)
         {
@@ -51,6 +53,7 @@ namespace ShoppingWebApi.Services
             _inventoryRepo = inventoryRepo;
             _paymentRepo = paymentRepo;
             _refundRepo = refundRepo;
+            _returnRepo= returnRepo;
             _loggerDb = loggerDb;
             _logger = logger;
         }
@@ -527,5 +530,136 @@ namespace ShoppingWebApi.Services
 
             return ord;
         }
+        //RequestReturnMethod
+
+        public async Task<bool> RequestReturnAsync(int userId,ReturnRequestCreateDto dto, CancellationToken ct=default)
+        {
+            await _loggerDb.InfoAsync("OrderService.RequestReturnAsync", "Return request started", ct: ct);
+            var order=await _orderRepo.GetQueryable()
+                .Include(o=>o.Payment)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o=>o.Id==dto.OrderId && o.UserId==userId, ct);
+            if (order == null)
+                throw new NotFoundException("Order not found.");
+            if (order.Status != OrderStatus.Delivered)
+                throw new BusinessValidationException("Return allowed only after delivery.");
+            bool alreadyRequested=await _returnRepo.GetQueryable()
+                .AnyAsync(r=>r.OrderId==dto.OrderId && r.Status==ReturnStatus.Requested, ct);
+            if (alreadyRequested)
+                throw new BusinessValidationException("Return already requested.");
+            var req = new ReturnRequest
+            { 
+              OrderId = dto.OrderId,
+              Reason= dto.Reason,
+              Status= ReturnStatus.Requested
+            };
+            await _returnRepo.Add(req);
+            //update order
+
+            order.Status = OrderStatus.ReturnRequested;
+            order.UpdatedUtc = DateTime.UtcNow;
+            await _orderRepo.Update(order.Id, order);
+
+            await _loggerDb.InfoAsync("OrderService.RequestReturnAsync", "Return request submitted", ct: ct);
+
+            return true;
+
+        }
+
+        public async Task<bool> ReviewReturnAsync(int returnId,ReturnRequestUpdateDto dto,CancellationToken ct=default)
+        {
+            await _loggerDb.InfoAsync("OrderService.ReviewReturnAsync", "Admin reviewing return request", ct: ct);
+            var req = await _returnRepo.Get(returnId);
+            if (req == null)
+                throw new NotFoundException("Return request not found.");
+            var order = await _orderRepo.GetQueryable()
+                .Include(o => o.Payment)
+                .Include(o => o.Items)
+                .FirstOrDefaultAsync(o => o.Id == req.OrderId, ct);
+            if (order == null)
+                throw new NotFoundException("Order not found.");
+            //Reject a request
+            if(dto.Action.Equals("reject",StringComparison.OrdinalIgnoreCase))
+            {
+                req.Status = ReturnStatus.Rejected;
+                req.Comments = dto.Comments;
+                req.ReviewedAtUtc= DateTime.UtcNow;
+
+                order.Status = OrderStatus.ReturnRejected;
+                order.UpdatedUtc= DateTime.UtcNow;
+
+                await _returnRepo.Update(returnId, req);
+                await _orderRepo.Update(order.Id, order);
+                await _loggerDb.InfoAsync("OrderService.RevewReturnAsync", $"Return " +
+                    $"rejected for order {order.Id}", ct: ct);
+                return true;
+
+            }
+            //Approve return
+            req.Status = ReturnStatus.Approved;
+            req.Comments = dto.Comments;
+            req.ReviewedAtUtc = DateTime.UtcNow;
+
+            order.Status = OrderStatus.ReturnApproved;
+            order.UpdatedUtc= DateTime.UtcNow;
+
+            await _returnRepo.Update(returnId, req);
+            await _orderRepo.Update(order.Id, order);
+            //when return the product->increase inventory back
+            var productIds=order.Items
+                .Select(i=>i.ProductId)
+                .Distinct()
+                .ToList();
+            var invMap = await _inventoryRepo.GetQueryable()
+                .Where(i => productIds.Contains(i.ProductId))
+                .ToDictionaryAsync(inv => inv.ProductId, ct);
+            foreach (var item in order.Items)
+            {
+                if(invMap.TryGetValue(item.ProductId, out var inv))
+                {
+                    inv.Quantity += item.Quantity;  //return product back to inventory stock.
+                    inv.UpdatedUtc = DateTime.UtcNow;
+                    await _inventoryRepo.Update(inv.Id, inv);
+                }
+            }
+            //check payment type
+            bool isCod = string.Equals(order.Payment?.PaymentType, "cod", StringComparison.OrdinalIgnoreCase);
+            //if payment is cashOnDelivery->no refund 
+            if(isCod)
+            {
+                order.Status = OrderStatus.Returned;
+                order.UpdatedUtc = DateTime.UtcNow;
+                await _orderRepo.Update(order.Id, order);
+
+                req.Status = ReturnStatus.Completed;
+                await _returnRepo.Update(returnId, req);
+
+                await _loggerDb.InfoAsync("OrderService.ReviewReturnAsync", $"Return approved for COD order {order.Id}.No refund needed.", ct: ct);
+                return true;
+
+            }
+            //online payment ->wallet refund
+
+            decimal refundAmount = order.Total;
+            if(refundAmount>0)
+            {
+                await _wallet.CreditAsync(order.UserId, refundAmount,WalletTxnType.CreditRefund,
+                    reference:$"Order:{order.Id}",
+                    remarks:"Return approved -refund to wallet",
+                    ct:ct );
+                await _loggerDb.InfoAsync("OrderService.ReviewReturnAsync",
+                    $"Refund{refundAmount} credited to wallet for Order{order.Id}", ct: ct);
+            }
+            //complete return
+            req.Status = ReturnStatus.Completed;
+            await _returnRepo.Update(returnId, req);
+            order.Status = OrderStatus.Returned;
+            order.UpdatedUtc = DateTime.UtcNow;
+            await _orderRepo.Update(order.Id, order);
+            
+            return true;
+        }
+
+
     }
 }
