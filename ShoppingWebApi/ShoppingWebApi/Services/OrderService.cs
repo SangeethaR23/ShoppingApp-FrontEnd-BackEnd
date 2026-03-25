@@ -27,6 +27,8 @@ namespace ShoppingWebApi.Services
         private readonly IRepository<int, Payment> _paymentRepo;
         private readonly IRepository<int, Refund> _refundRepo;
         private readonly IRepository<int, ReturnRequest> _returnRepo;
+        private readonly IPromoService _promoService;
+        private readonly IWalletService _wallet;
         private readonly ILogWriter _loggerDb;             
         private readonly ILogger<OrderService> _logger;        
 
@@ -41,6 +43,8 @@ namespace ShoppingWebApi.Services
             IRepository<int, Payment> paymentRepo,
             IRepository<int, Refund> refundRepo,
             IRepository<int,ReturnRequest> returnRepo,
+            IPromoService promoService,
+            IWalletService wallet,
             ILogWriter loggerDb,
             ILogger<OrderService> logger)
         {
@@ -54,6 +58,8 @@ namespace ShoppingWebApi.Services
             _paymentRepo = paymentRepo;
             _refundRepo = refundRepo;
             _returnRepo= returnRepo;
+            _promoService= promoService;
+            _wallet= wallet;
             _loggerDb = loggerDb;
             _logger = logger;
         }
@@ -67,42 +73,41 @@ namespace ShoppingWebApi.Services
 
             try
             {
-                // Validate user
+                // ✅ 1. Validate user
                 var userExists = await _userRepo.GetQueryable()
                     .AsNoTracking()
                     .AnyAsync(u => u.Id == request.UserId, ct);
-                if (!userExists) throw new NotFoundException($"User {request.UserId} not found.");
+                if (!userExists)
+                    throw new NotFoundException($"User {request.UserId} not found.");
 
-                // Validate address for user
+                // ✅ 2. Validate address
                 var address = await _addressRepo.GetQueryable()
                     .AsNoTracking()
                     .FirstOrDefaultAsync(a => a.Id == request.AddressId && a.UserId == request.UserId, ct);
                 if (address == null)
                     throw new BusinessValidationException("Invalid address for this user.");
 
-                // Load cart with items + products
+                // ✅ 3. Load cart + product data
                 var cart = await _cartRepo.GetQueryable()
-                    .Include(c => c.Items)
-                        .ThenInclude(i => i.Product)
+                    .Include(c => c.Items).ThenInclude(i => i.Product)
                     .FirstOrDefaultAsync(c => c.UserId == request.UserId, ct);
 
                 if (cart == null || cart.Items.Count == 0)
                     throw new BusinessValidationException("Cart is empty.");
 
-                // Build lines from cart (prefer UnitPrice snapshot)
                 var lines = cart.Items.Select(i => new
                 {
                     i.ProductId,
                     i.Quantity,
                     UnitPrice = i.UnitPrice > 0 ? i.UnitPrice : (i.Product?.Price ?? 0m),
-                    ProductName = i.Product?.Name ?? string.Empty,
-                    SKU = i.Product?.SKU ?? string.Empty
+                    ProductName = i.Product?.Name ?? "",
+                    SKU = i.Product?.SKU ?? ""
                 }).ToList();
 
                 if (lines.Any(l => l.UnitPrice <= 0))
                     throw new BusinessValidationException("One or more products have invalid unit price.");
 
-                // Inventory pre-check
+                // ✅ 4. Inventory pre-check
                 var productIds = lines.Select(l => l.ProductId).Distinct().ToList();
                 var invMap = await _inventoryRepo.GetQueryable()
                     .Where(inv => productIds.Contains(inv.ProductId))
@@ -117,14 +122,58 @@ namespace ShoppingWebApi.Services
                         throw new BusinessValidationException($"Insufficient inventory for product {l.ProductId}. Available: {inv.Quantity}, Requested: {l.Quantity}");
                 }
 
-                // Totals
+                // ✅ 5. SubTotal, Shipping, Discount
                 var subTotal = lines.Sum(l => l.UnitPrice * l.Quantity);
                 var shipping = request.ShippingFee ?? 0m;
                 var discount = request.Discount ?? 0m;
+
                 var total = subTotal + shipping - discount;
                 if (total < 0) total = 0;
 
-                // Create Order
+                // ✅ 6. Promo Code (Optional)
+                if (!string.IsNullOrWhiteSpace(request.PromoCode))
+                {
+                    var promo = await _promoService.GetValidPromoAsync(request.PromoCode.ToUpper(), total, ct);
+
+                    if (promo != null)
+                    {
+                        total -= promo.DiscountAmount;
+                        if (total < 0) total = 0;
+
+                        await _loggerDb.InfoAsync("OrderService.PlaceOrderAsync",
+                            $"Promo applied: {promo.Code} discount {promo.DiscountAmount}", ct: ct);
+                    }
+                }
+
+                // ✅ 7. Wallet usage (AFTER promo)
+                decimal walletUsed = 0m;
+
+                if (request.WalletUseAmount > 0)
+                {
+                    var wallet = await _wallet.GetAsync(request.UserId, ct);
+
+                    if (wallet != null && wallet.Balance > 0)
+                    {
+                        var allowed = Math.Min(request.WalletUseAmount,
+                                       Math.Min(wallet.Balance, total));
+
+                        if (allowed > 0)
+                        {
+                            await _wallet.DebitAsync(
+                                request.UserId,
+                                allowed,
+                                WalletTxnType.DebitOrder,
+                                reference: "Order checkout",
+                                remarks: "Wallet used for order",
+                                ct: ct);
+
+                            walletUsed = allowed;
+                            total -= walletUsed;
+                        }
+                    }
+                }
+
+                // ✅ 8. Create ORDER entity
                 var order = new Order
                 {
                     UserId = request.UserId,
@@ -147,12 +196,14 @@ namespace ShoppingWebApi.Services
                     SubTotal = subTotal,
                     ShippingFee = shipping,
                     Discount = discount,
-                    Total = total
+                    Total = total,
+                    WalletUsed = walletUsed // ✅ STORED HERE BEFORE ADD(order)
                 };
 
+                // ✅ 9. Save the order
                 var addedOrder = await _orderRepo.Add(order);
 
-                // Create OrderItems & decrement inventory
+                // ✅ 10. Create order items + decrement inventory
                 foreach (var l in lines)
                 {
                     var inv = invMap[l.ProductId];
@@ -162,7 +213,7 @@ namespace ShoppingWebApi.Services
 
                     var item = new OrderItem
                     {
-                        OrderId = addedOrder!.Id,
+                        OrderId = addedOrder.Id,
                         ProductId = l.ProductId,
                         ProductName = l.ProductName,
                         SKU = l.SKU,
@@ -170,33 +221,47 @@ namespace ShoppingWebApi.Services
                         Quantity = l.Quantity,
                         LineTotal = l.UnitPrice * l.Quantity
                     };
+
                     await _orderItemRepo.Add(item);
                 }
 
-                // Clear cart
+                // ✅ 11. Clear cart
                 foreach (var ci in cart.Items.ToList())
                     await _cartItemRepo.Delete(ci.Id);
 
-                // Create Payment (your fields)
+                // ✅ 12. Create Payment entry
                 var payment = new Payment
                 {
-                    OrderId = addedOrder!.Id,
+                    OrderId = addedOrder.Id,
                     UserId = request.UserId,
-                    TotalAmount = total,
-                    PaymentType = request.PaymentType.ToString(), // enum name as string
+                    TotalAmount = total,                     // total after promo & wallet
+                    PaymentType = request.PaymentType.ToString(),
                     CreatedAt = DateTime.UtcNow
                 };
+
                 await _paymentRepo.Add(payment);
 
-                // Sync Order.PaymentStatus
-                addedOrder.PaymentStatus = PaymentStatus.Pending;
+                // ✅ 13. Update order payment status
+                if (payment.PaymentType.ToLower() == "cod")
+                {
+                    addedOrder.PaymentStatus = PaymentStatus.Pending;
+                }
+                else
+                {
+                    addedOrder.PaymentStatus = (total == 0m)
+                        ? PaymentStatus.Paid
+                        : PaymentStatus.Pending;
+                }
+
                 addedOrder.UpdatedUtc = DateTime.UtcNow;
                 await _orderRepo.Update(addedOrder.Id, addedOrder);
 
+                // ✅ Success log
                 await _loggerDb.InfoAsync("OrderService.PlaceOrderAsync", "Place order success", ct: ct);
-                _logger.LogInformation("Order placed. OrderId={OrderId}, UserId={UserId}, Total={Total}", addedOrder.Id, request.UserId, total);
+                _logger.LogInformation("Order placed. OrderId={OrderId}, UserId={UserId}, Total={Total}",
+                    addedOrder.Id, request.UserId, total);
 
-                // Response (NO payment field)
+                // ✅ 14. Return DTO
                 return new PlaceOrderResponseDto
                 {
                     Id = addedOrder.Id,
@@ -213,7 +278,7 @@ namespace ShoppingWebApi.Services
                 _logger.LogError(ex, "Failed to place order for user {UserId}", request.UserId);
                 throw;
             }
-        }
+        } 
 
         // ----------------------------------------------------------------------
         // GET ORDER BY ID (Include Items) — NO payment in DTO
@@ -325,7 +390,11 @@ namespace ShoppingWebApi.Services
         // CANCEL ORDER — restore inventory + create Refund row (Initiated semantics via row only)
         // ----------------------------------------------------------------------
         public async Task<CancelOrderResponseDto> CancelOrderAsync(
-            int orderId, int userId, bool isAdmin = false, string? reason = null, CancellationToken ct = default)
+            int orderId,
+            int userId,
+            bool isAdmin = false,
+            string? reason = null,
+            CancellationToken ct = default)
         {
             await _loggerDb.InfoAsync("OrderService.CancelOrderAsync", "Cancel order started", ct: ct);
 
@@ -336,8 +405,11 @@ namespace ShoppingWebApi.Services
                     .Include(o => o.Payment)
                     .FirstOrDefaultAsync(o => o.Id == orderId, ct);
 
-                if (order == null) throw new NotFoundException("Order not found.");
-                if (!isAdmin && order.UserId != userId) throw new ForbiddenException("You cannot cancel another user's order.");
+                if (order == null)
+                    throw new NotFoundException("Order not found.");
+
+                if (!isAdmin && order.UserId != userId)
+                    throw new ForbiddenException("You cannot cancel another user's order.");
 
                 if (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered)
                     throw new BusinessValidationException($"Order already {order.Status}, cannot cancel.");
@@ -352,7 +424,7 @@ namespace ShoppingWebApi.Services
                     };
                 }
 
-                // Restore inventory
+                // ✅ Restore inventory
                 var productIds = order.Items.Select(i => i.ProductId).Distinct().ToList();
                 var invMap = await _inventoryRepo.GetQueryable()
                     .Where(inv => productIds.Contains(inv.ProductId))
@@ -368,16 +440,16 @@ namespace ShoppingWebApi.Services
                     }
                 }
 
-                // Update order: refund initiated → keep PaymentStatus neutral/pending
+                // ✅ Update order status
                 order.Status = OrderStatus.Cancelled;
                 order.PaymentStatus = PaymentStatus.Pending;
                 order.UpdatedUtc = DateTime.UtcNow;
                 await _orderRepo.Update(order.Id, order);
 
-                // Create Refund row (your columns)
+                // ✅ Insert Refund row (business log)
                 if (order.Payment != null)
                 {
-                    var refund = new Refund
+                    var refundRow = new Refund
                     {
                         PaymentId = order.Payment.PaymentId,
                         OrderId = order.Id,
@@ -385,17 +457,57 @@ namespace ShoppingWebApi.Services
                         RefundAmount = order.Total,
                         CreatedAt = DateTime.UtcNow
                     };
-                    await _refundRepo.Add(refund);
+                    await _refundRepo.Add(refundRow);
+                }
+
+                // ✅ Wallet Refund Logic
+                bool isCod = string.Equals(order.Payment?.PaymentType, "cod", StringComparison.OrdinalIgnoreCase);
+
+                if (isCod)
+                {
+                    // ✅ COD → user didn't pay online → DO NOT credit order.Total
+                    // ✅ But if wallet was used earlier, refund THAT amount.
+                    if (order.WalletUsed > 0)
+                    {
+                        await _wallet.CreditAsync(
+                            order.UserId,
+                            order.WalletUsed,
+                            WalletTxnType.CreditRefund,
+                            reference: $"Order:{order.Id}",
+                            remarks: "Cancellation - refund walletUsed (COD)",
+                            ct: ct
+                        );
+
+                        await _loggerDb.InfoAsync("OrderService.CancelOrderAsync",
+                            $"Wallet credited {order.WalletUsed} for COD cancellation Order {order.Id}", ct: ct);
+                    }
+                }
+                else
+                {
+                    // ✅ ONLINE PAYMENT → refund full total to wallet
+                    if (order.Total > 0)
+                    {
+                        await _wallet.CreditAsync(
+                            order.UserId,
+                            order.Total,
+                            WalletTxnType.CreditRefund,
+                            reference: $"Order:{order.Id}",
+                            remarks: "Cancellation - online refund to wallet",
+                            ct: ct
+                        );
+
+                        await _loggerDb.InfoAsync("OrderService.CancelOrderAsync",
+                            $"Wallet credited {order.Total} for ONLINE cancellation Order {order.Id}", ct: ct);
+                    }
                 }
 
                 await _loggerDb.InfoAsync("OrderService.CancelOrderAsync", "Cancel order success", ct: ct);
-                _logger.LogInformation("Order cancelled (refund initiated). OrderId={OrderId}, UserId={UserId}", order.Id, userId);
 
                 return new CancelOrderResponseDto
                 {
                     Id = order.Id,
                     Status = order.Status.ToString(),
-                    Message = "Order cancelled. Refund initiated."
+                    Message = "Order cancelled. Refund processed."
                 };
             }
             catch (Exception ex)
@@ -566,67 +678,78 @@ namespace ShoppingWebApi.Services
 
         }
 
-        public async Task<bool> ReviewReturnAsync(int returnId,ReturnRequestUpdateDto dto,CancellationToken ct=default)
+        public async Task<bool> ReviewReturnAsync(int returnId, ReturnRequestUpdateDto dto, CancellationToken ct = default)
         {
             await _loggerDb.InfoAsync("OrderService.ReviewReturnAsync", "Admin reviewing return request", ct: ct);
+
             var req = await _returnRepo.Get(returnId);
             if (req == null)
                 throw new NotFoundException("Return request not found.");
+
             var order = await _orderRepo.GetQueryable()
                 .Include(o => o.Payment)
                 .Include(o => o.Items)
                 .FirstOrDefaultAsync(o => o.Id == req.OrderId, ct);
+
             if (order == null)
                 throw new NotFoundException("Order not found.");
-            //Reject a request
-            if(dto.Action.Equals("reject",StringComparison.OrdinalIgnoreCase))
+
+            // ✅ REJECT FLOW
+            if (dto.Action.Equals("reject", StringComparison.OrdinalIgnoreCase))
             {
                 req.Status = ReturnStatus.Rejected;
                 req.Comments = dto.Comments;
-                req.ReviewedAtUtc= DateTime.UtcNow;
+                req.ReviewedAtUtc = DateTime.UtcNow;
 
                 order.Status = OrderStatus.ReturnRejected;
-                order.UpdatedUtc= DateTime.UtcNow;
+                order.UpdatedUtc = DateTime.UtcNow;
 
                 await _returnRepo.Update(returnId, req);
                 await _orderRepo.Update(order.Id, order);
-                await _loggerDb.InfoAsync("OrderService.RevewReturnAsync", $"Return " +
-                    $"rejected for order {order.Id}", ct: ct);
-                return true;
 
+                await _loggerDb.InfoAsync("OrderService.ReviewReturnAsync",
+                    $"Return rejected for order {order.Id}", ct: ct);
+
+                return true;
             }
-            //Approve return
+
+            // ✅ APPROVE RETURN
             req.Status = ReturnStatus.Approved;
             req.Comments = dto.Comments;
             req.ReviewedAtUtc = DateTime.UtcNow;
 
             order.Status = OrderStatus.ReturnApproved;
-            order.UpdatedUtc= DateTime.UtcNow;
+            order.UpdatedUtc = DateTime.UtcNow;
 
             await _returnRepo.Update(returnId, req);
             await _orderRepo.Update(order.Id, order);
-            //when return the product->increase inventory back
-            var productIds=order.Items
-                .Select(i=>i.ProductId)
-                .Distinct()
-                .ToList();
+
+            // ✅ 1. Restore Inventory
+            var productIds = order.Items.Select(i => i.ProductId).Distinct().ToList();
+
             var invMap = await _inventoryRepo.GetQueryable()
                 .Where(i => productIds.Contains(i.ProductId))
                 .ToDictionaryAsync(inv => inv.ProductId, ct);
+
             foreach (var item in order.Items)
             {
-                if(invMap.TryGetValue(item.ProductId, out var inv))
+                if (invMap.TryGetValue(item.ProductId, out var inv))
                 {
-                    inv.Quantity += item.Quantity;  //return product back to inventory stock.
+                    inv.Quantity += item.Quantity;       // ✅ return stock
                     inv.UpdatedUtc = DateTime.UtcNow;
                     await _inventoryRepo.Update(inv.Id, inv);
                 }
             }
-            //check payment type
+
+            // ✅ 2. Check payment type
             bool isCod = string.Equals(order.Payment?.PaymentType, "cod", StringComparison.OrdinalIgnoreCase);
-            //if payment is cashOnDelivery->no refund 
-            if(isCod)
+
+            // ✅ 3. COD Return Flow — NO REFUND
+            if (isCod)
             {
+                // ❌ Do NOT refund (user paid nothing online)
+                // ❌ Do NOT refund WalletUsed (you told specifically: no wallet refund for COD return)
+
                 order.Status = OrderStatus.Returned;
                 order.UpdatedUtc = DateTime.UtcNow;
                 await _orderRepo.Update(order.Id, order);
@@ -634,29 +757,37 @@ namespace ShoppingWebApi.Services
                 req.Status = ReturnStatus.Completed;
                 await _returnRepo.Update(returnId, req);
 
-                await _loggerDb.InfoAsync("OrderService.ReviewReturnAsync", $"Return approved for COD order {order.Id}.No refund needed.", ct: ct);
-                return true;
-
-            }
-            //online payment ->wallet refund
-
-            decimal refundAmount = order.Total;
-            if(refundAmount>0)
-            {
-                await _wallet.CreditAsync(order.UserId, refundAmount,WalletTxnType.CreditRefund,
-                    reference:$"Order:{order.Id}",
-                    remarks:"Return approved -refund to wallet",
-                    ct:ct );
                 await _loggerDb.InfoAsync("OrderService.ReviewReturnAsync",
-                    $"Refund{refundAmount} credited to wallet for Order{order.Id}", ct: ct);
+                    $"Return approved for COD order {order.Id}. No refund required.", ct: ct);
+
+                return true;
             }
-            //complete return
+
+            // ✅ 4. ONLINE PAYMENT RETURN → REFUND FULL ORDER TOTAL TO WALLET
+            decimal refundAmount = order.Total;
+
+            if (refundAmount > 0)
+            {
+                await _wallet.CreditAsync(
+                    order.UserId,
+                    refundAmount,
+                    WalletTxnType.CreditRefund,
+                    reference: $"Order:{order.Id}",
+                    remarks: "Return approved - refund to wallet",
+                    ct: ct);
+
+                await _loggerDb.InfoAsync("OrderService.ReviewReturnAsync",
+                    $"Refund {refundAmount} credited to wallet for online return Order {order.Id}", ct: ct);
+            }
+
+            // ✅ 5. Complete return
             req.Status = ReturnStatus.Completed;
             await _returnRepo.Update(returnId, req);
+
             order.Status = OrderStatus.Returned;
             order.UpdatedUtc = DateTime.UtcNow;
             await _orderRepo.Update(order.Id, order);
-            
+
             return true;
         }
 

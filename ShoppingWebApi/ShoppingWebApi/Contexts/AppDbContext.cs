@@ -22,6 +22,11 @@ namespace ShoppingWebApi.Contexts
         public DbSet<Review> Reviews => Set<Review>();
         public DbSet<Payment> Payments => Set<Payment>();
         public DbSet<Refund> Refunds => Set<Refund>();
+        public DbSet<ReturnRequest> ReturnRequests => Set<ReturnRequest>();
+        public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
+        public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
+        public DbSet<Wallet> Wallets => Set<Wallet>();
+        public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
         public DbSet<LogEntry> Logs => Set<LogEntry>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -178,6 +183,55 @@ namespace ShoppingWebApi.Contexts
                 .WithMany(u => u.Refunds)
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // ✅ Wishlist UNIQUE constraint (one product per user)
+            modelBuilder.Entity<WishlistItem>()
+                .HasIndex(w => new { w.UserId, w.ProductId })
+                .IsUnique();
+
+            // ✅ Wallet one-to-one with User
+            modelBuilder.Entity<Wallet>()
+                .HasIndex(w => w.UserId)
+                .IsUnique();
+
+            // ✅ Promo Code UNIQUE
+            modelBuilder.Entity<PromoCode>()
+                .HasIndex(p => p.Code)
+                .IsUnique();
+
+            // ✅ ReturnRequest → Order (1 to many)
+            modelBuilder.Entity<ReturnRequest>()
+                .HasOne<Order>()
+                .WithMany()
+                .HasForeignKey(r => r.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ✅ Wishlist → User & Product relationships
+            modelBuilder.Entity<WishlistItem>()
+                .HasOne(w => w.User)
+                .WithMany()
+                .HasForeignKey(w => w.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<WishlistItem>()
+                .HasOne(w => w.Product)
+                .WithMany()
+                .HasForeignKey(w => w.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ✅ WalletTransaction → User
+            modelBuilder.Entity<WalletTransaction>()
+                .HasOne<Wallet>()
+                .WithMany()
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
+
+
+
+
+
 
 
 

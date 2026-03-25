@@ -14,5 +14,6 @@ namespace ShoppingWebApi.Models.DTOs.Orders
         public string PaymentType { get; set; } = string.Empty;
 
         public decimal WalletUseAmount { get; set; } = 0m;
+        public string? PromoCode { get; internal set; }
     }
 }

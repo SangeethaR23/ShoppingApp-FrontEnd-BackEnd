@@ -7,6 +7,7 @@ using ShoppingWebApi.Models.DTOs.Categories;
 using ShoppingWebApi.Models.DTOs.Common;
 using ShoppingWebApi.Models.DTOs.Orders;
 using ShoppingWebApi.Models.DTOs.Products;
+using ShoppingWebApi.Models.DTOs.Promo;
 using ShoppingWebApi.Models.DTOs.Reviews;
 
 namespace ShoppingWebApi.Mappings
@@ -40,7 +41,8 @@ namespace ShoppingWebApi.Mappings
 
             CreateMap<Carts, CartReadDto>()
                 .ForMember(d => d.SubTotal, opt => opt.MapFrom(s => s.Items.Sum(i => i.UnitPrice * i.Quantity)));
-
+            //PromoCode
+            CreateMap<PromoCode, PromoReadDto>();
             // Orders
             //CreateMap<OrderItem, OrderItemReadDto>();
             CreateMap<Order, OrderReadDto>();
