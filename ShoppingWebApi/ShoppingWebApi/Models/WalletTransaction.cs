@@ -1,25 +1,23 @@
 ﻿using ShoppingWebApi.Models.enums;
-using System.ComponentModel.DataAnnotations;
 
 namespace ShoppingWebApi.Models
 {
-    public class WalletTransaction:BaseEntity
+    public class WalletTransaction : BaseEntity
     {
+        public int WalletId { get; set; }   // FK to Wallets.Id
+        public Wallet Wallet { get; set; } = null!;
 
+        // Keep UserId for direct user lookup (denormalized)
         public int UserId { get; set; }
         public User User { get; set; } = null!;
 
-        public decimal Amount { get; set; } // +credit, -debit
-        public WalletTxnType Type { get; set; }  // CreditRefund, DebitOrder, AdminAdjust
+        public decimal Amount { get; set; }
+        public WalletTxnType Type { get; set; }
 
-        [MaxLength(200)]
-        public string? Reference { get; set; }   // e.g., "Order: 123", "Refund: 45"
+        [System.ComponentModel.DataAnnotations.MaxLength(200)]
+        public string? Reference { get; set; }
 
-        [MaxLength(500)]
+        [System.ComponentModel.DataAnnotations.MaxLength(500)]
         public string? Remarks { get; set; }
-
-
-
-
     }
 }

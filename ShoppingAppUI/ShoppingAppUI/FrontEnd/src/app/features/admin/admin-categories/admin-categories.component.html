@@ -1,0 +1,81 @@
+<div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+    <h1 class="section-title" style="margin-bottom:0">Categories</h1>
+    <button class="btn btn-primary" (click)="openForm()">+ Add Category</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Description</th><th>Parent</th><th>Created</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        @for (c of categories(); track c.id) {
+          <tr>
+            <td><strong>{{ c.name }}</strong></td>
+            <td>{{ c.description ?? '-' }}</td>
+            <td>{{ getParentName(c.parentCategoryId) }}</td>
+            <td>{{ c.createdUtc | date:'mediumDate' }}</td>
+            <td>
+              <div style="display:flex;gap:0.5rem">
+                <button class="btn btn-outline btn-sm" (click)="openForm(c)">✏️</button>
+                <button class="btn btn-danger btn-sm" (click)="confirmDelete(c.id)">🗑</button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <app-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="onPage($event)"></app-pagination>
+</div>
+
+@if (showForm()) {
+  <div class="modal-overlay" (click)="showForm.set(false)">
+    <div class="modal" style="max-width:440px" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span>{{ editingCategory() ? 'Edit Category' : 'Add Category' }}</span>
+        <button class="btn-icon" (click)="showForm.set(false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="form" (ngSubmit)="save()">
+          <div class="form-group">
+            <label class="form-label">Name *</label>
+            <input formControlName="name" type="text" class="form-control">
+            @if (form.get('name')!.invalid && form.get('name')!.touched) {
+              <span class="form-error">Required</span>
+            }
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea formControlName="description" class="form-control" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Parent Category</label>
+            <select formControlName="parentCategoryId" class="form-control">
+              <option [value]="null">None (Top Level)</option>
+              @for (cat of categories(); track cat.id) {
+                @if (!editingCategory() || cat.id !== editingCategory()!.id) {
+                  <option [value]="cat.id">{{ cat.name }}</option>
+                }
+              }
+            </select>
+          </div>
+          <div class="modal-footer" style="padding:0;margin-top:1rem">
+            <button type="button" class="btn btn-secondary" (click)="showForm.set(false)">Cancel</button>
+            <button type="submit" class="btn btn-primary">{{ editingCategory() ? 'Update' : 'Create' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}
+
+<app-confirm-dialog
+  [visible]="showDeleteConfirm()"
+  title="Delete Category"
+  message="Delete this category? Products in this category may be affected."
+  confirmLabel="Delete"
+  (confirmed)="doDelete()"
+  (cancelled)="showDeleteConfirm.set(false)">
+</app-confirm-dialog>

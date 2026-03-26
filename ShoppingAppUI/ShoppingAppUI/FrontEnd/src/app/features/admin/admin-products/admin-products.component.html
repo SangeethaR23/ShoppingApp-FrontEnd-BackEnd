@@ -1,0 +1,135 @@
+<div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+    <h1 class="section-title" style="margin-bottom:0">Products ({{ totalCount() }})</h1>
+    <button class="btn btn-primary" (click)="openForm()">+ Add Product</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>SKU</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Status</th>
+          <th>Images</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of products(); track p.id) {
+          <tr>
+            <td><strong>{{ p.name }}</strong></td>
+            <td><span class="badge badge-secondary">{{ p.sku }}</span></td>
+            <td>{{ getCategoryName(p.categoryId) }}</td>
+            <td>₹{{ p.price | number:'1.0-0' }}</td>
+            <td>
+              <span class="badge {{ p.isActive ? 'badge-success' : 'badge-danger' }}">
+                {{ p.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-outline btn-sm" (click)="openImageForm(p.id)">🖼 Images</button>
+            </td>
+            <td>
+              <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                <button class="btn btn-outline btn-sm" (click)="openForm(p)" title="Edit">✏️</button>
+                <button class="btn btn-secondary btn-sm" (click)="toggleActive(p)" title="Toggle Active">
+                  {{ p.isActive ? '🔴' : '🟢' }}
+                </button>
+                <button class="btn btn-danger btn-sm" (click)="confirmDelete(p.id)" title="Delete">🗑</button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <app-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="onPage($event)"></app-pagination>
+</div>
+
+<!-- Product Form Modal -->
+@if (showForm()) {
+  <div class="modal-overlay" (click)="showForm.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span>{{ editingProduct() ? 'Edit Product' : 'Add Product' }}</span>
+        <button class="btn-icon" (click)="showForm.set(false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="form" (ngSubmit)="save()">
+          <div class="form-group">
+            <label class="form-label">Name *</label>
+            <input formControlName="name" type="text" class="form-control">
+            @if (form.get('name')!.invalid && form.get('name')!.touched) {
+              <span class="form-error">Required</span>
+            }
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div class="form-group">
+              <label class="form-label">SKU *</label>
+              <input formControlName="sku" type="text" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Price *</label>
+              <input formControlName="price" type="number" class="form-control" min="0" step="0.01">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select formControlName="categoryId" class="form-control">
+              <option value="0">Select category</option>
+              @for (cat of categories(); track cat.id) {
+                <option [value]="cat.id">{{ cat.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea formControlName="description" class="form-control" rows="3"></textarea>
+          </div>
+          <div class="form-group" style="flex-direction:row;align-items:center;gap:0.75rem">
+            <input formControlName="isActive" type="checkbox" id="isActive" style="width:16px;height:16px;accent-color:var(--primary)">
+            <label for="isActive" class="form-label" style="margin:0">Active</label>
+          </div>
+          <div class="modal-footer" style="padding:0;margin-top:1rem">
+            <button type="button" class="btn btn-secondary" (click)="showForm.set(false)">Cancel</button>
+            <button type="submit" class="btn btn-primary">{{ editingProduct() ? 'Update' : 'Create' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Image Form Modal -->
+@if (showImageForm()) {
+  <div class="modal-overlay" (click)="showImageForm.set(false)">
+    <div class="modal" style="max-width:400px" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span>Add Product Image</span>
+        <button class="btn-icon" (click)="showImageForm.set(false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Image URL</label>
+          <input type="url" class="form-control" placeholder="https://..." [value]="imageUrl()" (input)="imageUrl.set($any($event.target).value)">
+        </div>
+        <div class="modal-footer" style="padding:0;margin-top:1rem">
+          <button class="btn btn-secondary" (click)="showImageForm.set(false)">Cancel</button>
+          <button class="btn btn-primary" (click)="addImage()">Add Image</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<app-confirm-dialog
+  [visible]="showDeleteConfirm()"
+  title="Delete Product"
+  message="Are you sure you want to delete this product? This cannot be undone."
+  confirmLabel="Delete"
+  (confirmed)="doDelete()"
+  (cancelled)="showDeleteConfirm.set(false)">
+</app-confirm-dialog>

@@ -1,0 +1,86 @@
+<div>
+  <h1 class="section-title">Inventory Management</h1>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Product</th><th>SKU</th><th>Quantity</th><th>Reorder Level</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        @for (item of items(); track item.id) {
+          <tr>
+            <td><strong>{{ item.productName }}</strong></td>
+            <td><span class="badge badge-secondary">{{ item.sku }}</span></td>
+            <td>
+              <span [class]="item.quantity <= item.reorderLevel ? 'text-danger fw-bold' : ''">{{ item.quantity }}</span>
+            </td>
+            <td>{{ item.reorderLevel }}</td>
+            <td>
+              @if (item.quantity === 0) {
+                <span class="badge badge-danger">Out of Stock</span>
+              } @else if (item.quantity <= item.reorderLevel) {
+                <span class="badge badge-warning">Low Stock</span>
+              } @else {
+                <span class="badge badge-success">In Stock</span>
+              }
+            </td>
+            <td>
+              <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+                <button class="btn btn-outline btn-sm" (click)="openAdjust(item, 'adjust')">±Adjust</button>
+                <button class="btn btn-secondary btn-sm" (click)="openAdjust(item, 'set')">Set Qty</button>
+                <button class="btn btn-secondary btn-sm" (click)="openAdjust(item, 'reorder')">Reorder</button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <app-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="onPage($event)"></app-pagination>
+</div>
+
+@if (showAdjustModal()) {
+  <div class="modal-overlay" (click)="showAdjustModal.set(false)">
+    <div class="modal" style="max-width:400px" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span>
+          @if (adjustMode() === 'adjust') { Adjust Quantity }
+          @else if (adjustMode() === 'set') { Set Quantity }
+          @else { Set Reorder Level }
+        </span>
+        <button class="btn-icon" (click)="showAdjustModal.set(false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted" style="margin-bottom:1rem">{{ adjustTarget()?.productName }}</p>
+        <form [formGroup]="adjustForm" (ngSubmit)="saveAdjust()">
+          @if (adjustMode() === 'adjust') {
+            <div class="form-group">
+              <label class="form-label">Delta (+ to add, - to reduce)</label>
+              <input formControlName="delta" type="number" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Reason</label>
+              <input formControlName="reason" type="text" class="form-control" placeholder="Optional reason">
+            </div>
+          }
+          @if (adjustMode() === 'set') {
+            <div class="form-group">
+              <label class="form-label">New Quantity</label>
+              <input formControlName="quantity" type="number" class="form-control" min="0">
+            </div>
+          }
+          @if (adjustMode() === 'reorder') {
+            <div class="form-group">
+              <label class="form-label">Reorder Level</label>
+              <input formControlName="reorderLevel" type="number" class="form-control" min="0">
+            </div>
+          }
+          <div class="modal-footer" style="padding:0;margin-top:1rem">
+            <button type="button" class="btn btn-secondary" (click)="showAdjustModal.set(false)">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}

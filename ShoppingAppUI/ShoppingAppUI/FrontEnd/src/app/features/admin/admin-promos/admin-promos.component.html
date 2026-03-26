@@ -1,0 +1,74 @@
+<div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+    <h1 class="section-title" style="margin-bottom:0">Promo Codes</h1>
+    <button class="btn btn-primary" (click)="showForm.set(true)">+ Create Promo</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Code</th><th>Discount</th><th>Min Order</th><th>Valid From</th><th>Valid To</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        @for (p of promos(); track p.id) {
+          <tr>
+            <td><strong>{{ p.code }}</strong></td>
+            <td>₹{{ p.discountAmount }}</td>
+            <td>{{ p.minOrderAmount ? '₹' + p.minOrderAmount : '-' }}</td>
+            <td>{{ p.startDateUtc | date:'shortDate' }}</td>
+            <td>{{ p.endDateUtc | date:'shortDate' }}</td>
+            <td><span class="badge {{ p.isActive ? 'badge-success' : 'badge-danger' }}">{{ p.isActive ? 'Active' : 'Inactive' }}</span></td>
+            <td>
+              <button class="btn btn-secondary btn-sm" (click)="toggleActive(p)">
+                {{ p.isActive ? '🔴 Deactivate' : '🟢 Activate' }}
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (showForm()) {
+  <div class="modal-overlay" (click)="showForm.set(false)">
+    <div class="modal" style="max-width:440px" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span>Create Promo Code</span>
+        <button class="btn-icon" (click)="showForm.set(false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="form" (ngSubmit)="save()">
+          <div class="form-group">
+            <label class="form-label">Code *</label>
+            <input formControlName="code" type="text" class="form-control" placeholder="SAVE20" style="text-transform:uppercase">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div class="form-group">
+              <label class="form-label">Discount Amount (₹) *</label>
+              <input formControlName="discountAmount" type="number" class="form-control" min="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Min Order Amount</label>
+              <input formControlName="minOrderAmount" type="number" class="form-control" min="0">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div class="form-group">
+              <label class="form-label">Start Date *</label>
+              <input formControlName="startDateUtc" type="datetime-local" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">End Date *</label>
+              <input formControlName="endDateUtc" type="datetime-local" class="form-control">
+            </div>
+          </div>
+          <div class="modal-footer" style="padding:0;margin-top:1rem">
+            <button type="button" class="btn btn-secondary" (click)="showForm.set(false)">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}

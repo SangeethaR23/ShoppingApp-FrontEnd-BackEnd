@@ -1,0 +1,4 @@
+.admin-topbar { display:flex;align-items:center;gap:1rem;padding:1rem 1.5rem;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100; }
+.admin-title { font-weight:700;font-size:1rem;flex:1; }
+.admin-user { font-size:0.85rem;color:var(--text-muted); }
+.admin-page { padding:1.5rem; }

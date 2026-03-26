@@ -199,12 +199,7 @@ namespace ShoppingWebApi.Contexts
                 .HasIndex(p => p.Code)
                 .IsUnique();
 
-            // ✅ ReturnRequest → Order (1 to many)
-            modelBuilder.Entity<ReturnRequest>()
-                .HasOne<Order>()
-                .WithMany()
-                .HasForeignKey(r => r.OrderId)
-                .OnDelete(DeleteBehavior.Cascade);
+            // ✅ ReturnRequest → Order (handled below with explicit FK)
 
             // ✅ Wishlist → User & Product relationships
             modelBuilder.Entity<WishlistItem>()
@@ -219,11 +214,46 @@ namespace ShoppingWebApi.Contexts
                 .HasForeignKey(w => w.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ✅ WalletTransaction → User
+            // ✅ WalletTransaction → Wallet
             modelBuilder.Entity<WalletTransaction>()
-                .HasOne<Wallet>()
+                .HasOne(t => t.Wallet)
+                .WithMany()
+                .HasForeignKey(t => t.WalletId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ✅ WalletTransaction → User (for direct lookup)
+            modelBuilder.Entity<WalletTransaction>()
+                .HasOne(t => t.User)
                 .WithMany()
                 .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // ✅ Precision for new decimal properties
+            modelBuilder.Entity<Order>()
+                .Property(o => o.WalletUsed).HasPrecision(18, 2);
+
+            modelBuilder.Entity<Payment>()
+                .Property(p => p.TotalAmount).HasPrecision(18, 2);
+
+            modelBuilder.Entity<Refund>()
+                .Property(r => r.RefundAmount).HasPrecision(18, 2);
+
+            modelBuilder.Entity<PromoCode>()
+                .Property(p => p.DiscountAmount).HasPrecision(18, 2);
+            modelBuilder.Entity<PromoCode>()
+                .Property(p => p.MinOrderAmount).HasPrecision(18, 2);
+
+            modelBuilder.Entity<Wallet>()
+                .Property(w => w.Balance).HasPrecision(18, 2);
+
+            modelBuilder.Entity<WalletTransaction>()
+                .Property(w => w.Amount).HasPrecision(18, 2);
+
+            // ✅ ReturnRequest → Order explicit FK
+            modelBuilder.Entity<ReturnRequest>()
+                .HasOne(r => r.Order)
+                .WithMany()
+                .HasForeignKey(r => r.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
 
 

@@ -39,7 +39,8 @@ namespace ShoppingWebApi.Services
             var item = new WishlistItem
             {
                 UserId = userId,
-                ProductId = productId
+                ProductId = productId,
+                CreatedUtc = DateTime.UtcNow
             };
 
             await _wishlistRepo.Add(item);
@@ -89,12 +90,14 @@ namespace ShoppingWebApi.Services
             }
             else
             {
+                var product = await _productRepo.Get(productId);
                 var newItem = new CartItem
                 {
                     CartId = cart.Id,
                     ProductId = productId,
                     Quantity = 1,
-                    UnitPrice = 0 // will pick product price automatically
+                    UnitPrice = product?.Price ?? 0m,
+                    CreatedUtc = DateTime.UtcNow
                 };
                 await _cartItemRepo.Add(newItem);
             }

@@ -1,0 +1,65 @@
+<div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+    <h1 class="section-title" style="margin-bottom:0">Orders ({{ totalCount() }})</h1>
+    <select class="form-control" style="width:auto;min-width:160px" (change)="onFilterChange($any($event.target).value)">
+      <option value="">All Statuses</option>
+      @for (s of orderStatuses; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Order #</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Payment</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        @for (o of orders(); track o.id) {
+          <tr>
+            <td><strong>{{ o.orderNumber }}</strong></td>
+            <td>{{ o.placedAtUtc | date:'shortDate' }}</td>
+            <td>{{ o.shipToName }}</td>
+            <td>{{ o.items.length }}</td>
+            <td>₹{{ o.total | number:'1.0-0' }}</td>
+            <td><span class="badge {{ statusClass(o.status) }}">{{ o.status }}</span></td>
+            <td><span class="badge {{ o.paymentStatus === 'Paid' ? 'badge-success' : 'badge-warning' }}">{{ o.paymentStatus }}</span></td>
+            <td>
+              <div style="display:flex;gap:0.5rem">
+                <a [routerLink]="['/orders', o.id]" class="btn btn-outline btn-sm">👁 View</a>
+                <button class="btn btn-secondary btn-sm" (click)="openStatusModal(o)">✏️ Status</button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <app-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="onPage($event)"></app-pagination>
+</div>
+
+@if (showStatusModal()) {
+  <div class="modal-overlay" (click)="showStatusModal.set(false)">
+    <div class="modal" style="max-width:380px" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span>Update Order Status</span>
+        <button class="btn-icon" (click)="showStatusModal.set(false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted" style="margin-bottom:1rem">{{ statusTarget()?.orderNumber }}</p>
+        <div class="form-group">
+          <label class="form-label">New Status</label>
+          <select class="form-control" [value]="newStatus()" (change)="newStatus.set($any($event.target).value)">
+            @for (s of orderStatuses; track s) {
+              <option [value]="s">{{ s }}</option>
+            }
+          </select>
+        </div>
+        <div class="modal-footer" style="padding:0;margin-top:1rem">
+          <button class="btn btn-secondary" (click)="showStatusModal.set(false)">Cancel</button>
+          <button class="btn btn-primary" (click)="updateStatus()">Update</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

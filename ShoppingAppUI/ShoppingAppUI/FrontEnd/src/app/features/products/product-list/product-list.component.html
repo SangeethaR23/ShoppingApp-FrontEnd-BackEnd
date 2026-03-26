@@ -1,0 +1,75 @@
+<div class="container" style="padding-top:2rem;padding-bottom:3rem">
+  <!-- Header -->
+  <div class="list-header">
+    <div>
+      <h1 class="section-title">All Products</h1>
+      <p class="text-muted">{{ totalCount() }} products found</p>
+    </div>
+  </div>
+
+  <!-- Filters Bar -->
+  <div class="filters-bar">
+    <input [formControl]="searchCtrl" type="text" class="form-control search-input" placeholder="🔍 Search products...">
+
+    <select class="form-control filter-select" (change)="onCategoryChange($any($event.target).value ? +$any($event.target).value : null)">
+      <option value="">All Categories</option>
+      @for (cat of categories(); track cat.id) {
+        <option [value]="cat.id" [selected]="selectedCategory() === cat.id">{{ cat.name }}</option>
+      }
+    </select>
+
+    <select class="form-control filter-select" (change)="onSortChange($any($event.target).value)">
+      <option value="newest-desc">Newest First</option>
+      <option value="price-asc">Price: Low to High</option>
+      <option value="price-desc">Price: High to Low</option>
+      <option value="rating-desc">Top Rated</option>
+      <option value="name-asc">Name A-Z</option>
+    </select>
+
+    <label class="stock-toggle">
+      <input type="checkbox" [checked]="inStockOnly()" (change)="onStockToggle()">
+      <span>In Stock Only</span>
+    </label>
+  </div>
+
+  <!-- Products Grid -->
+  @if (products().length > 0) {
+    <div class="products-grid">
+      @for (p of products(); track p.id) {
+        <div class="product-card" [routerLink]="['/products', p.id]">
+          @if (!p.isActive) {
+            <span class="out-of-stock-badge">Out of Stock</span>
+          }
+          <button class="wishlist-btn" [class.active]="isWishlisted(p.id)" (click)="toggleWishlist(p, $event)">
+            {{ isWishlisted(p.id) ? '❤️' : '🤍' }}
+          </button>
+          <div class="product-img-wrap">
+            @if (getImage(p)) {
+              <img [src]="getImage(p)" [alt]="p.name" class="product-img">
+            } @else {
+              <div class="product-img-placeholder">📦</div>
+            }
+          </div>
+          <div class="product-info">
+            <div class="product-name">{{ p.name }}</div>
+            <div class="product-sku text-muted" style="font-size:0.75rem">SKU: {{ p.sku }}</div>
+            <app-star-rating [value]="p.averageRating" [count]="p.reviewsCount" [showCount]="true" size="0.85rem"></app-star-rating>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.5rem">
+              <span class="product-price">₹{{ p.price | number:'1.0-0' }}</span>
+              <button class="btn btn-primary btn-sm" [disabled]="!p.isActive" (click)="addToCart(p, $event)">
+                🛒 Add
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+    <app-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)"></app-pagination>
+  } @else {
+    <div class="empty-state">
+      <div class="empty-state-icon">🔍</div>
+      <h3>No products found</h3>
+      <p>Try adjusting your filters or search term</p>
+    </div>
+  }
+</div>

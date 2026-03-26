@@ -1,0 +1,10 @@
+.list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+.filters-bar { display: flex; gap: 0.75rem; margin-bottom: 2rem; flex-wrap: wrap; align-items: center; }
+.search-input { flex: 1; min-width: 200px; }
+.filter-select { width: auto; min-width: 160px; }
+.stock-toggle { display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.stock-toggle input { accent-color: var(--primary); width: 16px; height: 16px; }
+@media (max-width: 600px) {
+  .filters-bar { flex-direction: column; }
+  .search-input, .filter-select { width: 100%; }
+}

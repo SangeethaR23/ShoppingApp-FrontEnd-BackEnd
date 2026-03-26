@@ -1,0 +1,35 @@
+<div class="admin-layout">
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" [class.collapsed]="collapsed()">
+    <div class="sidebar-logo">
+      <span>🛍️</span>
+      <span class="sidebar-text">ShopZone Admin</span>
+    </div>
+    <nav class="sidebar-nav">
+      @for (item of navItems; track item.route) {
+        <a [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="{exact: item.route === '/admin'}" class="sidebar-link">
+          <span class="icon">{{ item.icon }}</span>
+          <span class="sidebar-text">{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+    <div style="padding:1rem;border-top:1px solid rgba(255,255,255,0.1)">
+      <button class="sidebar-link w-full" (click)="logout()">
+        <span class="icon">🚪</span>
+        <span class="sidebar-text">Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="admin-content">
+    <div class="admin-topbar">
+      <button class="btn-icon" (click)="collapsed.update(v => !v)" style="font-size:1.2rem">☰</button>
+      <span class="admin-title">Admin Panel</span>
+      <span class="admin-user">👤 {{ auth.currentUser()?.email }}</span>
+    </div>
+    <div class="admin-page">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

@@ -1,0 +1,118 @@
+@if (product()) {
+  <div class="container" style="padding:2rem 1.5rem">
+    <a routerLink="/products" class="back-link">← Back to Products</a>
+
+    <div class="detail-layout">
+      <!-- Images -->
+      <div class="images-section">
+        <div class="main-image">
+          @if (product()!.images[selectedImage()]?.url) {
+            <img [src]="product()!.images[selectedImage()].url" [alt]="product()!.name" class="main-img">
+          } @else {
+            <div class="img-placeholder">📦</div>
+          }
+          @if (!product()!.isActive) {
+            <div class="oos-overlay">Out of Stock</div>
+          }
+        </div>
+        @if (product()!.images.length > 1) {
+          <div class="thumbnails">
+            @for (img of product()!.images; track img.id; let i = $index) {
+              <img [src]="img.url" [alt]="product()!.name" class="thumb" [class.active]="selectedImage() === i" (click)="selectedImage.set(i)">
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Info -->
+      <div class="info-section">
+        <div class="product-badge">{{ product()!.sku }}</div>
+        <h1 class="detail-name">{{ product()!.name }}</h1>
+        <app-star-rating [value]="product()!.averageRating" [count]="product()!.reviewsCount" [showCount]="true" size="1.1rem"></app-star-rating>
+        <div class="detail-price">₹{{ product()!.price | number:'1.0-0' }}</div>
+
+        @if (!product()!.isActive) {
+          <div class="badge badge-danger" style="margin:0.5rem 0">Out of Stock</div>
+        } @else {
+          <div class="badge badge-success" style="margin:0.5rem 0">In Stock</div>
+        }
+
+        <!-- Quantity -->
+        <div class="qty-row">
+          <span class="form-label">Quantity:</span>
+          <div class="qty-ctrl">
+            <button class="btn btn-secondary btn-sm" (click)="changeQty(-1)">−</button>
+            <span class="qty-val">{{ quantity() }}</span>
+            <button class="btn btn-secondary btn-sm" (click)="changeQty(1)">+</button>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="action-btns">
+          <button class="btn btn-primary btn-lg" [disabled]="!product()!.isActive || addingToCart()" (click)="addToCart()">
+            🛒 {{ addingToCart() ? 'Adding...' : 'Add to Cart' }}
+          </button>
+          <button class="btn btn-outline btn-lg" [disabled]="!product()!.isActive" (click)="buyNow()">
+            ⚡ Buy Now
+          </button>
+          <button class="wishlist-btn-lg" [class.active]="isWishlisted()" (click)="toggleWishlist()">
+            {{ isWishlisted() ? '❤️' : '🤍' }} {{ isWishlisted() ? 'Wishlisted' : 'Add to Wishlist' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reviews Section -->
+    <div class="reviews-section card" style="margin-top:2rem">
+      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Customer Reviews ({{ product()!.reviewsCount }})</span>
+        @if (auth.isLoggedIn() && hasPurchased() && !auth.isAdmin()) {
+          <button class="btn btn-outline btn-sm" (click)="showReviewForm.update(v => !v)">
+            {{ myReview() ? 'Edit Review' : '+ Write Review' }}
+          </button>
+        }
+      </div>
+      <div class="card-body">
+        @if (showReviewForm()) {
+          <form [formGroup]="reviewForm" (ngSubmit)="submitReview()" class="review-form">
+            <div class="form-group">
+              <label class="form-label">Your Rating</label>
+              <app-star-rating [value]="reviewForm.get('rating')!.value ?? 5" [readonly]="false" size="1.5rem" (rated)="reviewForm.get('rating')!.setValue($event)"></app-star-rating>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Comment (optional)</label>
+              <textarea formControlName="comment" class="form-control" rows="3" placeholder="Share your experience..."></textarea>
+            </div>
+            <div style="display:flex;gap:0.75rem">
+              <button type="submit" class="btn btn-primary">Submit Review</button>
+              <button type="button" class="btn btn-secondary" (click)="showReviewForm.set(false)">Cancel</button>
+            </div>
+          </form>
+        }
+
+        @if (reviews().length > 0) {
+          @for (r of reviews(); track r.id) {
+            <div class="review-item">
+              <div class="review-header">
+                <span class="reviewer-name">{{ r.userName ?? 'User' }}</span>
+                <app-star-rating [value]="r.rating" size="0.9rem"></app-star-rating>
+                <span class="review-date text-muted">{{ r.createdUtc | date:'mediumDate' }}</span>
+              </div>
+              @if (r.comment) {
+                <p class="review-comment">{{ r.comment }}</p>
+              }
+            </div>
+          }
+          <app-pagination [page]="reviewPage()" [totalPages]="reviewTotalPages()" (pageChange)="onReviewPage($event)"></app-pagination>
+        } @else {
+          <p class="text-muted">No reviews yet. Be the first to review!</p>
+        }
+      </div>
+    </div>
+  </div>
+} @else {
+  <div class="empty-state">
+    <div class="empty-state-icon">📦</div>
+    <h3>Loading product...</h3>
+  </div>
+}

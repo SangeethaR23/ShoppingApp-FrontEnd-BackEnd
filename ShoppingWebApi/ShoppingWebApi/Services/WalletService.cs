@@ -53,6 +53,7 @@ namespace ShoppingWebApi.Services
 
                 var entry = new WalletTransaction
                 {
+                    WalletId = wallet.Id,
                     UserId = userId,
                     Amount = amount,
                     Type = type,
@@ -92,6 +93,7 @@ namespace ShoppingWebApi.Services
 
                 var entry = new WalletTransaction
                 {
+                    WalletId = wallet.Id,
                     UserId = userId,
                     Amount = -amount,
                     Type = type,

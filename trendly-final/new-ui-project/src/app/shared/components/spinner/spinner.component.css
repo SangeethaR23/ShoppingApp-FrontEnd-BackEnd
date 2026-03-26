@@ -1,7 +1,0 @@
-.spinner-wrap {
-  background: var(--bg-white);
-  border-radius: 50%;
-  padding: 12px;
-  box-shadow: var(--shadow-lg);
-}
-/* core spinner styles in global styles.css */

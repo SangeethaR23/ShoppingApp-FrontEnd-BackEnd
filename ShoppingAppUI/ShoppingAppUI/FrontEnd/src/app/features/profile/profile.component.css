@@ -1,0 +1,13 @@
+.profile-tabs { display:flex;gap:0.5rem;margin-bottom:2rem;border-bottom:2px solid var(--border);padding-bottom:0; }
+.tab-btn { padding:0.65rem 1.25rem;border:none;background:none;font-size:0.9rem;font-weight:600;color:var(--text-muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all var(--transition); }
+.tab-btn:hover { color:var(--primary); }
+.tab-btn.active { color:var(--primary);border-bottom-color:var(--primary); }
+.address-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem; }
+.address-card .addr-label { font-size:0.75rem;font-weight:700;color:var(--primary);text-transform:uppercase;margin-bottom:0.4rem; }
+.address-card .addr-name { font-weight:700;margin-bottom:0.2rem; }
+.address-card .addr-line { font-size:0.85rem;color:var(--text-muted); }
+.address-card .addr-phone { font-size:0.85rem;margin-top:0.3rem; }
+.addr-actions { display:flex;gap:0.5rem;margin-top:1rem; }
+@media (max-width:480px) {
+  [style*="grid-template-columns:1fr 1fr"] { grid-template-columns:1fr !important; }
+}

@@ -1,0 +1,74 @@
+<div class="container" style="padding:2rem 1.5rem">
+  <h1 class="section-title">Shopping Cart</h1>
+
+  @if (cartSvc.cart()?.items?.length) {
+    <div class="cart-layout">
+      <!-- Items -->
+      <div class="cart-items">
+        @for (item of cartSvc.cart()!.items; track item.id) {
+          <div class="cart-item card">
+            <div class="item-info">
+              <div class="item-img">📦</div>
+              <div class="item-details">
+                <div class="item-name">{{ item.productName }}</div>
+                <div class="item-sku text-muted">SKU: {{ item.sku }}</div>
+                <div class="item-price">₹{{ item.unitPrice | number:'1.0-0' }} each</div>
+              </div>
+            </div>
+            <div class="item-actions">
+              <div class="qty-ctrl">
+                <button class="btn btn-secondary btn-sm" (click)="updateQty(item.productId, item.quantity - 1)">−</button>
+                <span class="qty-val">{{ item.quantity }}</span>
+                <button class="btn btn-secondary btn-sm" (click)="updateQty(item.productId, item.quantity + 1)">+</button>
+              </div>
+              <div class="item-total">₹{{ item.lineTotal | number:'1.0-0' }}</div>
+              <button class="btn btn-danger btn-sm" (click)="confirmRemove(item.productId)" title="Remove">🗑</button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Summary -->
+      <div class="cart-summary card">
+        <div class="card-header">Order Summary</div>
+        <div class="card-body">
+          <div class="summary-row">
+            <span>Subtotal ({{ cartSvc.cartCount() }} items)</span>
+            <span>₹{{ cartSvc.cartTotal() | number:'1.0-0' }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Shipping</span>
+            <span class="text-success">Free</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row total-row">
+            <span>Total</span>
+            <span>₹{{ cartSvc.cartTotal() | number:'1.0-0' }}</span>
+          </div>
+          <button class="btn btn-primary w-full btn-lg" style="margin-top:1.25rem" (click)="checkout()">
+            Proceed to Checkout →
+          </button>
+          <a routerLink="/products" class="btn btn-secondary w-full" style="margin-top:0.75rem;text-align:center">
+            Continue Shopping
+          </a>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="empty-state">
+      <div class="empty-state-icon">🛒</div>
+      <h3>Your cart is empty</h3>
+      <p>Add some products to get started</p>
+      <a routerLink="/products" class="btn btn-primary" style="margin-top:1rem">Shop Now</a>
+    </div>
+  }
+</div>
+
+<app-confirm-dialog
+  [visible]="showConfirm()"
+  title="Remove Item"
+  message="Remove this item from your cart?"
+  confirmLabel="Remove"
+  (confirmed)="doRemove()"
+  (cancelled)="showConfirm.set(false)">
+</app-confirm-dialog>

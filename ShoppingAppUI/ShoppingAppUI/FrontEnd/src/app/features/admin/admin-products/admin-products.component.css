@@ -1,0 +1,5 @@
+/* Admin Products - inherits global table styles */
+.product-img-thumb {
+  width: 40px; height: 40px; object-fit: cover;
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+}

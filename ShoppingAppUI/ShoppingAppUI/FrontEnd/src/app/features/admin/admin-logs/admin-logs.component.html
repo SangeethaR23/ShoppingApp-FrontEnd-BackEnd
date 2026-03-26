@@ -1,0 +1,72 @@
+<div>
+  <h1 class="section-title">Audit Logs ({{ totalCount() }})</h1>
+
+  <!-- Filters -->
+  <form [formGroup]="filterForm" (ngSubmit)="applyFilters()" class="logs-filters">
+    <select formControlName="level" class="form-control" style="width:auto">
+      <option value="">All Levels</option>
+      <option value="Error">Error</option>
+      <option value="Warning">Warning</option>
+      <option value="Info">Info</option>
+    </select>
+    <input formControlName="search" type="text" class="form-control" placeholder="Search message..." style="flex:1;min-width:160px">
+    <input formControlName="source" type="text" class="form-control" placeholder="Source..." style="width:160px">
+    <input formControlName="from" type="date" class="form-control" style="width:150px">
+    <input formControlName="to" type="date" class="form-control" style="width:150px">
+    <button type="submit" class="btn btn-primary">Filter</button>
+  </form>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Level</th><th>Message</th><th>Source</th><th>Exception</th><th>Date</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        @for (log of logs(); track log.id) {
+          <tr>
+            <td><span class="badge {{ levelClass(log.level) }}">{{ log.level }}</span></td>
+            <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ log.message }}</td>
+            <td>{{ log.source ?? '-' }}</td>
+            <td>{{ log.exception ?? '-' }}</td>
+            <td>{{ log.createdUtc | date:'short' }}</td>
+            <td>
+              <button class="btn btn-outline btn-sm" (click)="selectedLog.set(log)">👁 View</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <app-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="onPage($event)"></app-pagination>
+</div>
+
+@if (selectedLog()) {
+  <div class="modal-overlay" (click)="selectedLog.set(null)">
+    <div class="modal" style="max-width:640px" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span>Log Detail</span>
+        <button class="btn-icon" (click)="selectedLog.set(null)">✕</button>
+      </div>
+      <div class="modal-body" style="font-size:0.85rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem">
+          <div><strong>Level:</strong> <span class="badge {{ levelClass(selectedLog()!.level) }}">{{ selectedLog()!.level }}</span></div>
+          <div><strong>Date:</strong> {{ selectedLog()!.createdUtc | date:'medium' }}</div>
+          <div><strong>Source:</strong> {{ selectedLog()!.source ?? '-' }}</div>
+          <div><strong>Correlation ID:</strong> {{ selectedLog()!.correlationId ?? '-' }}</div>
+          <div><strong>Request Path:</strong> {{ selectedLog()!.requestPath ?? '-' }}</div>
+          <div><strong>Exception:</strong> {{ selectedLog()!.exception ?? '-' }}</div>
+        </div>
+        <div style="margin-bottom:0.75rem">
+          <strong>Message:</strong>
+          <p style="background:var(--surface2);padding:0.75rem;border-radius:var(--radius-sm);margin-top:0.4rem;word-break:break-all">{{ selectedLog()!.message }}</p>
+        </div>
+        @if (selectedLog()!.stackTrace) {
+          <div>
+            <strong>Stack Trace:</strong>
+            <pre style="background:var(--surface2);padding:0.75rem;border-radius:var(--radius-sm);margin-top:0.4rem;overflow:auto;max-height:200px;font-size:0.75rem">{{ selectedLog()!.stackTrace }}</pre>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}

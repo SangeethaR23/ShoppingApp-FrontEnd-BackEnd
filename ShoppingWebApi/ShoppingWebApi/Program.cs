@@ -1,3 +1,4 @@
+using AspNetCoreRateLimit;
 using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
@@ -31,6 +32,10 @@ builder.Services.AddControllers(options=>
 {
     options.Filters.Add<ShoppingWebApi.Filters.ValidateModelAttribute>();
 });
+builder.Services.AddMemoryCache();
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.AddInMemoryRateLimiting();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
@@ -57,6 +62,11 @@ builder.Services.AddScoped<IRepository<int, OrderItem>, Repository<int, OrderIte
 builder.Services.AddScoped<IRepository<int, Review>, Repository<int, Review>>();
 builder.Services.AddScoped<IRepository<int, Payment>, Repository<int, Payment>>();
 builder.Services.AddScoped<IRepository<int, Refund>, Repository<int, Refund>>();
+builder.Services.AddScoped<IRepository<int,Wallet>, Repository<int, Wallet>>();
+builder.Services.AddScoped<IRepository<int, WishlistItem>, Repository<int, WishlistItem>>();
+builder.Services.AddScoped<IRepository<int,ReturnRequest>, Repository<int,ReturnRequest>>();
+builder.Services.AddScoped<IRepository<int, PromoCode>, Repository<int, PromoCode>>();
+builder.Services.AddScoped<IRepository<int, WalletTransaction>, Repository<int, WalletTransaction>>();
 
 builder.Services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
 builder.Services.AddScoped<ICategoryService,CategoryService>();
@@ -70,6 +80,9 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ILogWriter, DbLogWriter>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IWalletService, WalletService>();
+builder.Services.AddScoped<IWishlistService, WishlistService>();
+builder.Services.AddScoped<IPromoService, PromoService>();
 #endregion
 
 #region Addcors
@@ -82,7 +95,8 @@ builder.Services.AddCors(options =>
             policy.WithOrigins("http://localhost:4200", "http://localhost:4201", "http://localhost:4202",
                     "http://localhost:5173",
                     "http://localhost:5174",
-                    "http://localhost:5175")
+                    "http://localhost:5175",
+                    "http://localhost:49678")
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
@@ -128,6 +142,7 @@ builder.Services
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("UserOnly",  policy => policy.RequireRole("User"));
 });
 
 var app = builder.Build();

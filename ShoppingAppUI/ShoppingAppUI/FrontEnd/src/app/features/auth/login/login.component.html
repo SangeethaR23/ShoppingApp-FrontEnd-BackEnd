@@ -1,0 +1,46 @@
+<div class="auth-page">
+  <div class="auth-card card">
+    <div class="auth-header">
+      <div class="auth-logo">🛍️</div>
+      <h1>Welcome Back</h1>
+      <p>Sign in to your ShopZone account</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input formControlName="email" type="email" class="form-control" placeholder="you@example.com" autocomplete="email">
+        @if (email.invalid && email.touched) {
+          <span class="form-error">
+            @if (email.errors?.['required']) { Email is required }
+            @else if (email.errors?.['email']) { Enter a valid email }
+          </span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="pass-wrap">
+          <input formControlName="password" [type]="showPass() ? 'text' : 'password'" class="form-control" placeholder="••••••••" autocomplete="current-password">
+          <button type="button" class="pass-toggle" (click)="showPass.update(v => !v)">
+            {{ showPass() ? '🙈' : '👁' }}
+          </button>
+        </div>
+        @if (password.invalid && password.touched) {
+          <span class="form-error">
+            @if (password.errors?.['required']) { Password is required }
+            @else if (password.errors?.['minlength']) { Minimum 6 characters }
+          </span>
+        }
+      </div>
+
+      <button type="submit" class="btn btn-primary w-full btn-lg" [disabled]="loading()">
+        @if (loading()) { Signing in... } @else { Sign In }
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <p>Don't have an account? <a routerLink="/auth/register" class="link">Register</a></p>
+    </div>
+  </div>
+</div>

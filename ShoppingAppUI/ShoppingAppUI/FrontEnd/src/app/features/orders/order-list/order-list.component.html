@@ -1,0 +1,48 @@
+<div class="container" style="padding:2rem 1.5rem">
+  <h1 class="section-title">My Orders</h1>
+
+  @if (orders().length > 0) {
+    <div class="orders-list">
+      @for (order of orders(); track order.id) {
+        <div class="order-card card">
+          <div class="order-header">
+            <div>
+              <div class="order-number">{{ order.orderNumber }}</div>
+              <div class="order-date text-muted">{{ order.placedAtUtc | date:'mediumDate' }}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+              <span class="badge {{ statusClass(order.status) }}">{{ order.status }}</span>
+              <span class="order-total">₹{{ order.total | number:'1.0-0' }}</span>
+            </div>
+          </div>
+          <div class="order-meta">
+            <span class="text-muted">{{ order.itemsCount }} item(s)</span>
+          </div>
+          <div class="order-actions">
+            <button class="btn btn-outline btn-sm" [routerLink]="['/orders', order.id]">👁 View Details</button>
+            @if (canCancel(order.status)) {
+              <button class="btn btn-danger btn-sm" (click)="confirmCancel(order.id)">✕ Cancel Order</button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+    <app-pagination [page]="page()" [totalPages]="totalPages()" (pageChange)="onPage($event)"></app-pagination>
+  } @else {
+    <div class="empty-state">
+      <div class="empty-state-icon">📦</div>
+      <h3>No orders yet</h3>
+      <p>Start shopping to see your orders here</p>
+      <a routerLink="/products" class="btn btn-primary" style="margin-top:1rem">Shop Now</a>
+    </div>
+  }
+</div>
+
+<app-confirm-dialog
+  [visible]="showConfirm()"
+  title="Cancel Order"
+  message="Are you sure you want to cancel this order? This action cannot be undone."
+  confirmLabel="Cancel Order"
+  (confirmed)="doCancel()"
+  (cancelled)="showConfirm.set(false)">
+</app-confirm-dialog>

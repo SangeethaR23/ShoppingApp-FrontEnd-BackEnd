@@ -21,7 +21,7 @@ namespace ShoppingWebApi.Controllers
         [HttpPost("toggle")]
         public async Task<IActionResult> Toggle(WishlistToggleDto dto, CancellationToken ct)
         {
-            var userId = int.Parse(User.FindFirst("id")!.Value);
+            var userId = int.Parse(User.FindFirst("userId")!.Value);
             bool added = await _wishlist.ToggleAsync(userId, dto.ProductId, ct);
 
             return Ok(new
@@ -35,7 +35,7 @@ namespace ShoppingWebApi.Controllers
         [HttpGet]
         public async Task<IActionResult> Get(CancellationToken ct)
         {
-            var userId = int.Parse(User.FindFirst("id")!.Value);
+            var userId = int.Parse(User.FindFirst("userId")!.Value);
             var items = await _wishlist.GetAsync(userId, ct);
             return Ok(items);
         }
@@ -44,7 +44,7 @@ namespace ShoppingWebApi.Controllers
         [HttpPost("move-to-cart/{productId}")]
         public async Task<IActionResult> MoveToCart(int productId, CancellationToken ct)
         {
-            var userId = int.Parse(User.FindFirst("id")!.Value);
+            var userId = int.Parse(User.FindFirst("userId")!.Value);
             await _wishlist.MoveToCartAsync(userId, productId, ct);
             return Ok(new { message = "Moved to cart" });
         }

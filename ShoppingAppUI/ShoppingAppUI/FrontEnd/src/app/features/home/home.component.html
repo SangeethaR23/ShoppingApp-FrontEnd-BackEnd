@@ -1,0 +1,125 @@
+<!-- HERO CAROUSEL -->
+<section class="hero-section">
+  <div class="carousel">
+    @for (slide of slides; track $index) {
+      <div class="slide" [class.active]="currentSlide() === $index" [style.background]="slide.bg">
+        <div class="slide-content">
+          <div class="slide-icon">{{ slide.icon }}</div>
+          <h1 class="slide-title">{{ slide.title }}</h1>
+          <p class="slide-sub">{{ slide.sub }}</p>
+          <a routerLink="/products" class="btn btn-lg" style="background:#fff;color:var(--primary);font-weight:700">Shop Now →</a>
+        </div>
+      </div>
+    }
+    <div class="carousel-dots">
+      @for (slide of slides; track $index) {
+        <button class="dot" [class.active]="currentSlide() === $index" (click)="goSlide($index)"></button>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">Shop by Category</h2>
+    <p class="section-subtitle">Find exactly what you're looking for</p>
+    <div class="categories-grid">
+      @for (cat of categories(); track cat.id) {
+        <div class="category-card" (click)="goCategory(cat.id)">
+          <div class="cat-icon">🏷️</div>
+          <div class="cat-name">{{ cat.name }}</div>
+        </div>
+      }
+      @if (categories().length === 0) {
+        <p class="text-muted">Loading categories...</p>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED PRODUCTS -->
+<section class="section" style="background:var(--surface2)">
+  <div class="container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem">
+      <div>
+        <h2 class="section-title" style="margin-bottom:0.25rem">Featured Products</h2>
+        <p class="section-subtitle" style="margin-bottom:0">Handpicked just for you</p>
+      </div>
+      <a routerLink="/products" class="btn btn-outline">View All →</a>
+    </div>
+
+    <div class="products-grid">
+      @for (p of products(); track p.id) {
+        <div class="product-card" (click)="goProduct(p.id)">
+          @if (!p.isActive) {
+            <span class="out-of-stock-badge">Out of Stock</span>
+          }
+          <button class="wishlist-btn" [class.active]="isWishlisted(p.id)" (click)="toggleWishlist(p, $event)" title="Wishlist">
+            {{ isWishlisted(p.id) ? '❤️' : '🤍' }}
+          </button>
+          <div class="product-img-wrap">
+            @if (getImage(p)) {
+              <img [src]="getImage(p)" [alt]="p.name" class="product-img">
+            } @else {
+              <div class="product-img-placeholder">📦</div>
+            }
+          </div>
+          <div class="product-info">
+            <div class="product-name">{{ p.name }}</div>
+            <app-star-rating [value]="p.averageRating" [count]="p.reviewsCount" [showCount]="true" size="0.85rem"></app-star-rating>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.5rem">
+              <span class="product-price">₹{{ p.price | number:'1.0-0' }}</span>
+              <button class="btn btn-primary btn-sm" [disabled]="!p.isActive" (click)="addToCart(p, $event)">
+                🛒 Add
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (products().length === 0) {
+      <div class="empty-state">
+        <div class="empty-state-icon">📦</div>
+        <h3>Loading products...</h3>
+      </div>
+    }
+  </div>
+</section>
+
+<!-- FEATURES STRIP -->
+<section class="features-strip">
+  <div class="container">
+    <div class="features-grid">
+      <div class="feature-item">
+        <span class="feature-icon">🚚</span>
+        <div>
+          <div class="feature-title">Free Shipping</div>
+          <div class="feature-sub">On orders above ₹499</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon">🔒</span>
+        <div>
+          <div class="feature-title">Secure Payment</div>
+          <div class="feature-sub">100% secure transactions</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon">↩️</span>
+        <div>
+          <div class="feature-title">Easy Returns</div>
+          <div class="feature-sub">30-day return policy</div>
+        </div>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon">💬</span>
+        <div>
+          <div class="feature-title">24/7 Support</div>
+          <div class="feature-sub">Always here to help</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
