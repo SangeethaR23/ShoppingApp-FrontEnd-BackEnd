@@ -5,9 +5,9 @@
   --primary-light: #ede9ff;
   --secondary: #ff6584;
   --accent: #43e97b;
-  --bg: #f8f9fc;
+  --bg: #f3f0ff;
   --surface: #ffffff;
-  --surface2: #f1f3f9;
+  --surface2: #ede9ff;
   --text: #1a1a2e;
   --text-muted: #6b7280;
   --border: #e5e7eb;
@@ -29,7 +29,8 @@ html { scroll-behavior: smooth; }
 
 body {
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-  background: var(--bg);
+  background: linear-gradient(160deg, #f3f0ff 0%, #fce7f3 40%, #e0f2fe 100%);
+  background-attachment: fixed;
   color: var(--text);
   line-height: 1.6;
   min-height: 100vh;
@@ -98,17 +99,35 @@ input, select, textarea { font-family: inherit; }
 .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(108,99,255,0.12); }
 .form-control.ng-valid.ng-dirty { border-color: var(--success); }
 .form-control.ng-invalid.ng-dirty { border-color: var(--danger); }
+.form-control.readonly-field,
+.form-control:disabled {
+  background: rgba(0,0,0,0.04);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  border-color: var(--border);
+  opacity: 1;
+}
 .form-error { font-size: 0.78rem; color: var(--danger); margin-top: 0.2rem; }
-
 /* ===== CARD ===== */
 .card {
-  background: var(--surface); border-radius: var(--radius);
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius);
   box-shadow: var(--shadow); overflow: hidden;
   transition: box-shadow var(--transition), transform var(--transition);
 }
 .card:hover { box-shadow: var(--shadow-lg); }
+.card:hover { box-shadow: var(--shadow-lg); }
 .card-body { padding: 1.5rem; }
-.card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 1.05rem; }
+.card-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: none;
+  font-weight: 700;
+  font-size: 1.05rem;
+  background: linear-gradient(135deg, #1a1a2e, #2d2b55);
+  color: #fff;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
 
 /* ===== BADGE ===== */
 .badge {
@@ -200,12 +219,19 @@ tbody tr:last-child td { border-bottom: none; }
 
 /* ===== PRODUCT CARD ===== */
 .product-card {
-  background: var(--surface); border-radius: var(--radius);
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius);
   box-shadow: var(--shadow); overflow: hidden; cursor: pointer;
   transition: transform var(--transition), box-shadow var(--transition);
   position: relative;
+  border: 2.5px solid rgba(0,0,0,0.2);
 }
-.product-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+.product-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(0,0,0,0.35);
+}
 .product-card:hover .product-img { transform: scale(1.07); }
 .product-img-wrap { overflow: hidden; height: 220px; background: var(--surface2); }
 .product-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
@@ -270,6 +296,16 @@ tbody tr:last-child td { border-bottom: none; }
   .tracking-step { flex-direction: row; align-items: center; gap: 1rem; width: 100%; padding: 0.5rem 0; }
   .tracking-step::before { top: 50%; left: 18px; right: auto; width: 3px; height: 100%; }
   .step-label { margin-top: 0; text-align: left; }
+}
+
+/* ===== ADMIN FILTER BAR ===== */
+.admin-filter-bar {
+  display: flex; align-items: center; gap: 0.6rem;
+  flex-wrap: wrap; margin-bottom: 1.25rem;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(108,99,255,0.15);
+  border-radius: 12px; padding: 0.85rem 1.1rem;
 }
 
 /* ===== ADMIN SIDEBAR ===== */

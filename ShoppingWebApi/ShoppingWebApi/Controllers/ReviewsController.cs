@@ -65,7 +65,6 @@ namespace ShoppingWebApi.Controllers
         [Authorize]
         [HttpGet("product/{productId:int}/mine")]
         [ProducesResponseType(typeof(ReviewReadDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetMineForProduct([FromRoute] int productId, CancellationToken ct = default)
         {
@@ -73,7 +72,7 @@ namespace ShoppingWebApi.Controllers
             if (userId is null) return Unauthorized();
 
             var dto = await _service.GetAsync(productId, userId.Value, ct);
-            return dto == null ? NotFound() : Ok(dto);
+            return Ok(dto); // returns null if no review — frontend handles it
         }
 
         /// <summary>Update my review for a product.</summary>

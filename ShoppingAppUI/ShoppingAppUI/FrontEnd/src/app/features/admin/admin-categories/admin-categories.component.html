@@ -1,13 +1,33 @@
 <div>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:1rem">
     <h1 class="section-title" style="margin-bottom:0">Categories</h1>
     <button class="btn btn-primary" (click)="openForm()">+ Add Category</button>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="admin-filter-bar">
+    <input type="text" class="form-control" style="max-width:220px" placeholder="Search by name" [(ngModel)]="filterName">
+    <select class="form-control" style="max-width:150px" [(ngModel)]="sortBy">
+      <option value="name">Sort: Name</option>
+      <option value="createdUtc">Sort: Created</option>
+    </select>
+    <button class="btn btn-outline btn-sm" (click)="sortDesc = !sortDesc">{{ sortDesc ? '↓ Desc' : '↑ Asc' }}</button>
+    <button class="btn btn-primary btn-sm" (click)="applyFilters()">Apply</button>
+    @if (filterName) {
+      <button class="btn btn-outline btn-sm" (click)="clearFilters()">✕ Clear</button>
+    }
   </div>
 
   <div class="table-wrap">
     <table>
       <thead>
-        <tr><th>Name</th><th>Description</th><th>Parent</th><th>Created</th><th>Actions</th></tr>
+        <tr>
+          <th (click)="toggleSort('name')" style="cursor:pointer">Name {{ sortIcon('name') }}</th>
+          <th>Description</th>
+          <th>Parent</th>
+          <th (click)="toggleSort('createdUtc')" style="cursor:pointer">Created {{ sortIcon('createdUtc') }}</th>
+          <th>Actions</th>
+        </tr>
       </thead>
       <tbody>
         @for (c of categories(); track c.id) {

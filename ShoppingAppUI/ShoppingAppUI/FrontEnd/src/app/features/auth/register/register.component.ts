@@ -28,7 +28,8 @@ export class RegisterComponent {
     password: ['', [Validators.required, Validators.minLength(6)]],
     firstName: ['', Validators.required],
     lastName: ['', Validators.required],
-    phone: ['']
+    phone: [''],
+    role: ['User']
   });
 
   get email() { return this.form.get('email')!; }
@@ -39,7 +40,7 @@ export class RegisterComponent {
   submit() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading.set(true);
-    this.auth.register({ ...this.form.value, role: 'User' } as any).subscribe({
+    this.auth.register({ ...this.form.value } as any).subscribe({
       next: () => {
         this.toast.success('Account created! Welcome to ShopZone.');
         this.cart.loadCart().subscribe();

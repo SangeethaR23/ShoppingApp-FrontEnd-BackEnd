@@ -1,17 +1,41 @@
 <div>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:1rem">
     <h1 class="section-title" style="margin-bottom:0">Products ({{ totalCount() }})</h1>
     <button class="btn btn-primary" (click)="openForm()">+ Add Product</button>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="admin-filter-bar">
+    <input type="text" class="form-control" style="max-width:200px" placeholder="Search by name" [(ngModel)]="filterName">
+    <select class="form-control" style="max-width:160px" [(ngModel)]="filterCategory">
+      <option value="">All Categories</option>
+      @for (c of categories(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+    </select>
+    <select class="form-control" style="max-width:130px" [(ngModel)]="filterStatus">
+      <option value="">All Status</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+    </select>
+    <select class="form-control" style="max-width:150px" [(ngModel)]="sortBy">
+      <option value="newest">Sort: Newest</option>
+      <option value="name">Sort: Name</option>
+      <option value="price">Sort: Price</option>
+    </select>
+    <button class="btn btn-outline btn-sm" (click)="sortDesc = !sortDesc">{{ sortDesc ? '↓ Desc' : '↑ Asc' }}</button>
+    <button class="btn btn-primary btn-sm" (click)="applyFilters()">Apply</button>
+    @if (filterName || filterCategory || filterStatus) {
+      <button class="btn btn-outline btn-sm" (click)="clearFilters()">✕ Clear</button>
+    }
   </div>
 
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>Name</th>
+          <th (click)="toggleSort('name')" style="cursor:pointer">Name {{ sortIcon('name') }}</th>
           <th>SKU</th>
           <th>Category</th>
-          <th>Price</th>
+          <th (click)="toggleSort('price')" style="cursor:pointer">Price {{ sortIcon('price') }}</th>
           <th>Status</th>
           <th>Images</th>
           <th>Actions</th>

@@ -1,5 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { OrderService } from '../../../core/services/order.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -17,7 +17,6 @@ export class OrderDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private orderSvc = inject(OrderService);
   private toast = inject(ToastService);
-  private router = inject(Router);
 
   order = signal<OrderReadDto | null>(null);
   showCancelConfirm = signal(false);
@@ -42,7 +41,7 @@ export class OrderDetailComponent implements OnInit {
   }
 
   doReturn() {
-    this.orderSvc.returnOrder(this.order()!.id, 'Return requested by user').subscribe(r => {
+    this.orderSvc.returnOrder(this.order()!.id, 'Return requested by user').subscribe(() => {
       this.toast.success('Return request submitted');
       this.orderSvc.getById(this.order()!.id).subscribe(o => this.order.set(o));
     });

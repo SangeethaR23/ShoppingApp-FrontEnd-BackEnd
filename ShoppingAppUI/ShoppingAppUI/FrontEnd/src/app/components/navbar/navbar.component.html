@@ -9,45 +9,49 @@
     <!-- Desktop Nav -->
     <div class="nav-links" [class.open]="menuOpen()">
       @if (!auth.isAdmin()) {
-        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" class="nav-link" (click)="closeMenu()">Home</a>
-        <a routerLink="/products" routerLinkActive="active" class="nav-link" (click)="closeMenu()">Products</a>
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" class="nav-link" (click)="closeMenu()">
+          <span class="nav-icon">🏠</span> Home
+        </a>
+        <a routerLink="/products" routerLinkActive="active" class="nav-link" (click)="closeMenu()">
+          <span class="nav-icon">🛒</span> Products
+        </a>
       }
 
       @if (auth.isLoggedIn() && !auth.isAdmin()) {
-        <!-- Cart -->
-        <a routerLink="/cart" class="nav-icon-btn" title="Cart" (click)="closeMenu()">
-          <span class="icon-wrap">
-            🛒
-            @if (cart.cartCount() > 0) {
-              <span class="badge-count">{{ cart.cartCount() }}</span>
-            }
-          </span>
+        <a routerLink="/cart" routerLinkActive="active" class="nav-link" (click)="closeMenu()">
+          <span class="nav-icon">🛍️</span> Cart
+          @if (cart.cartCount() > 0) {
+            <span class="badge-count" style="position:relative;top:auto;right:auto;margin-left:2px">{{ cart.cartCount() }}</span>
+          }
         </a>
-        <!-- Wishlist -->
-        <a routerLink="/wishlist" class="nav-icon-btn" title="Wishlist" (click)="closeMenu()">
-          <span class="icon-wrap">
-            ❤️
-            @if (wishlist.items().length > 0) {
-              <span class="badge-count">{{ wishlist.items().length }}</span>
-            }
-          </span>
+        <a routerLink="/wishlist" routerLinkActive="active" class="nav-link" (click)="closeMenu()">
+          <span class="nav-icon">❤️</span> Wishlist
+          @if (wishlist.items().length > 0) {
+            <span class="badge-count" style="position:relative;top:auto;right:auto;margin-left:2px">{{ wishlist.items().length }}</span>
+          }
         </a>
-        <a routerLink="/orders" routerLinkActive="active" class="nav-link" (click)="closeMenu()">Orders</a>
-        <a routerLink="/profile" routerLinkActive="active" class="nav-link" (click)="closeMenu()">Profile</a>
+        <a routerLink="/orders" routerLinkActive="active" class="nav-link" (click)="closeMenu()">
+          <span class="nav-icon">📦</span> Orders
+        </a>
+        <a routerLink="/profile" routerLinkActive="active" class="nav-link" (click)="closeMenu()">
+          <span class="nav-icon">👤</span> Profile
+        </a>
       }
 
       @if (auth.isLoggedIn() && auth.isAdmin()) {
-        <a routerLink="/admin" routerLinkActive="active" class="nav-link" (click)="closeMenu()">Admin Dashboard</a>
+        <a routerLink="/admin" routerLinkActive="active" class="nav-link" (click)="closeMenu()">
+          <span class="nav-icon">⚙️</span> Admin Dashboard
+        </a>
       }
 
       <!-- Auth -->
       @if (auth.isLoggedIn()) {
         <div class="nav-user">
-          <span class="user-greeting">👤 Welcome, {{ userName() }}</span>
+          <span class="user-greeting">👋 {{ userName() }}</span>
           <button class="btn btn-outline btn-sm" (click)="logout()">Logout</button>
         </div>
       } @else {
-        <span class="user-greeting">👤 Welcome Guest</span>
+        <span class="user-greeting">👋 Welcome Guest</span>
         <a routerLink="/auth/login" class="btn btn-primary btn-sm" (click)="closeMenu()">Login</a>
         <a routerLink="/auth/register" class="btn btn-outline btn-sm" (click)="closeMenu()">Register</a>
       }

@@ -1,10 +1,37 @@
 <div>
-  <h1 class="section-title">Inventory Management</h1>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:1rem">
+    <h1 class="section-title" style="margin-bottom:0">Inventory Management</h1>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="admin-filter-bar">
+    <input type="text" class="form-control" style="max-width:180px" placeholder="Search SKU" [(ngModel)]="filterSku">
+    <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.9rem;font-weight:600;white-space:nowrap">
+      <input type="checkbox" [(ngModel)]="filterLowStock" style="accent-color:var(--primary)"> Low Stock Only
+    </label>
+    <select class="form-control" style="max-width:160px" [(ngModel)]="sortBy">
+      <option value="name">Sort: Name</option>
+      <option value="quantity">Sort: Quantity</option>
+      <option value="reorderLevel">Sort: Reorder</option>
+    </select>
+    <button class="btn btn-outline btn-sm" (click)="sortDesc = !sortDesc">{{ sortDesc ? '↓ Desc' : '↑ Asc' }}</button>
+    <button class="btn btn-primary btn-sm" (click)="applyFilters()">Apply</button>
+    @if (filterSku || filterLowStock) {
+      <button class="btn btn-outline btn-sm" (click)="clearFilters()">✕ Clear</button>
+    }
+  </div>
 
   <div class="table-wrap">
     <table>
       <thead>
-        <tr><th>Product</th><th>SKU</th><th>Quantity</th><th>Reorder Level</th><th>Status</th><th>Actions</th></tr>
+        <tr>
+          <th (click)="toggleSort('name')" style="cursor:pointer">Product {{ sortIcon('name') }}</th>
+          <th>SKU</th>
+          <th (click)="toggleSort('quantity')" style="cursor:pointer">Quantity {{ sortIcon('quantity') }}</th>
+          <th (click)="toggleSort('reorderLevel')" style="cursor:pointer">Reorder Level {{ sortIcon('reorderLevel') }}</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
       </thead>
       <tbody>
         @for (item of items(); track item.id) {

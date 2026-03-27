@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ShoppingWebApi.Models.DTOs.Common;
 using ShoppingWebApi.Models.DTOs.Orders;
+using ShoppingWebApi.Models.DTOs.Return;
 
 namespace ShoppingWebApi.Interfaces
 {
@@ -13,7 +14,9 @@ namespace ShoppingWebApi.Interfaces
         Task<OrderReadDto?> GetByIdAsync(int orderId, CancellationToken ct = default);
 
         Task<PagedResult<OrderSummaryDto>> GetUserOrdersAsync(
-            int userId, int page = 1, int size = 10, string? sortBy = "date", bool desc = true, CancellationToken ct = default);
+            int userId, int page = 1, int size = 10, string? sortBy = "date", bool desc = true,
+            string? status = null, DateTime? from = null, DateTime? to = null,
+            CancellationToken ct = default);
 
         Task<CancelOrderResponseDto> CancelOrderAsync(
             int orderId, int userId, bool isAdmin = false, string? reason = null, CancellationToken ct = default);
@@ -23,5 +26,7 @@ namespace ShoppingWebApi.Interfaces
             int page = 1, int size = 10, string? sortBy = "date", bool desc = true, CancellationToken ct = default);
 
         Task<bool> UpdateStatusAsync(int orderId, string newStatus, CancellationToken ct = default);
+
+        Task<bool> RequestReturnAsync(int userId, ReturnRequestCreateDto dto, CancellationToken ct = default);
     }
 }

@@ -1,5 +1,7 @@
 @if (order()) {
   <div class="container" style="padding:2rem 1.5rem">
+
+    <!-- Header -->
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem">
       <div>
         <a routerLink="/orders" class="back-link">← My Orders</a>
@@ -17,88 +19,97 @@
       </div>
     </div>
 
-    <!-- Order Tracking -->
-    @if (!['Cancelled','ReturnRequested','ReturnApproved','ReturnRejected','Returned'].includes(order()!.status)) {
-      <div class="card" style="margin-bottom:1.5rem">
-        <div class="card-header">Order Tracking</div>
-        <div class="card-body">
-          <div class="tracking-steps">
-            @for (step of trackingSteps; track step) {
-              <div class="tracking-step {{ getStepStatus(step) }}">
-                <div class="step-circle">{{ stepIcon(step) }}</div>
-                <div class="step-label">{{ step }}</div>
-                @if ($index < trackingSteps.length - 1) {
-                  <div class="step-line {{ getStepStatus(trackingSteps[$index + 1]) !== 'pending' ? 'done' : '' }}"></div>
-                }
-              </div>
-            }
-          </div>
-        </div>
-      </div>
-    }
+    <!-- Main layout: tracking left | content right -->
+    <div class="page-layout">
 
-    <div class="detail-grid">
-      <!-- Items -->
-      <div class="card">
-        <div class="card-header">Order Items</div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>SKU</th>
-                <th>Unit Price</th>
-                <th>Qty</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of order()!.items; track item.id) {
-                <tr>
-                  <td>{{ item.productName }}</td>
-                  <td><span class="badge badge-secondary">{{ item.sku }}</span></td>
-                  <td>₹{{ item.unitPrice | number:'1.0-0' }}</td>
-                  <td>{{ item.quantity }}</td>
-                  <td><strong>₹{{ item.lineTotal | number:'1.0-0' }}</strong></td>
-                </tr>
+      <!-- Left: Vertical Tracking -->
+      @if (!['Cancelled','ReturnRequested','ReturnApproved','ReturnRejected','Returned'].includes(order()!.status)) {
+        <div class="card tracking-card">
+          <div class="card-header">Order Tracking</div>
+          <div class="card-body">
+            <div class="tracking-col">
+              @for (step of trackingSteps; track step) {
+                <div class="track-item">
+                  <div class="track-left">
+                    <div class="step-circle {{ getStepStatus(step) }}">{{ stepIcon(step) }}</div>
+                    @if ($index < trackingSteps.length - 1) {
+                      <div class="step-vline {{ getStepStatus(trackingSteps[$index + 1]) !== 'pending' ? 'done' : '' }}"></div>
+                    }
+                  </div>
+                  <div class="step-label {{ getStepStatus(step) }}">{{ step }}</div>
+                </div>
               }
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div style="display:flex;flex-direction:column;gap:1.5rem">
-        <!-- Shipping -->
-        <div class="card">
-          <div class="card-header">📍 Shipping Address</div>
-          <div class="card-body">
-            <p><strong>{{ order()!.shipToName }}</strong></p>
-            @if (order()!.shipToPhone) { <p>📞 {{ order()!.shipToPhone }}</p> }
-            <p>{{ order()!.shipToLine1 }}{{ order()!.shipToLine2 ? ', ' + order()!.shipToLine2 : '' }}</p>
-            <p>{{ order()!.shipToCity }}, {{ order()!.shipToState }} {{ order()!.shipToPostalCode }}</p>
-            <p>{{ order()!.shipToCountry }}</p>
-          </div>
-        </div>
-
-        <!-- Payment Summary -->
-        <div class="card">
-          <div class="card-header">💰 Payment Summary</div>
-          <div class="card-body">
-            <div class="summary-row"><span>Subtotal</span><span>₹{{ order()!.subTotal | number:'1.0-0' }}</span></div>
-            <div class="summary-row"><span>Shipping</span><span>₹{{ order()!.shippingFee | number:'1.0-0' }}</span></div>
-            @if (order()!.discount > 0) {
-              <div class="summary-row text-success"><span>Discount</span><span>-₹{{ order()!.discount | number:'1.0-0' }}</span></div>
-            }
-            <div class="summary-divider"></div>
-            <div class="summary-row total-row"><span>Total</span><span>₹{{ order()!.total | number:'1.0-0' }}</span></div>
-            <div class="summary-row" style="margin-top:0.5rem">
-              <span class="text-muted">Payment Status</span>
-              <span class="badge {{ order()!.paymentStatus === 'Paid' ? 'badge-success' : 'badge-warning' }}">{{ order()!.paymentStatus }}</span>
             </div>
           </div>
         </div>
+      }
+
+      <!-- Right: Order content -->
+      <div class="order-content">
+
+        <!-- Order Items (full width) -->
+        <div class="card" style="margin-bottom:1.5rem">
+          <div class="card-header">Order Items</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>SKU</th>
+                  <th>Unit Price</th>
+                  <th>Qty</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of order()!.items; track item.id) {
+                  <tr>
+                    <td>{{ item.productName }}</td>
+                    <td><span class="badge badge-secondary">{{ item.sku }}</span></td>
+                    <td>₹{{ item.unitPrice | number:'1.0-0' }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td><strong>₹{{ item.lineTotal | number:'1.0-0' }}</strong></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Shipping + Payment side by side -->
+        <div class="info-row">
+          <div class="card">
+            <div class="card-header">📍 Shipping Address</div>
+            <div class="card-body">
+              <p><strong>{{ order()!.shipToName }}</strong></p>
+              @if (order()!.shipToPhone) { <p>📞 {{ order()!.shipToPhone }}</p> }
+              <p>{{ order()!.shipToLine1 }}{{ order()!.shipToLine2 ? ', ' + order()!.shipToLine2 : '' }}</p>
+              <p>{{ order()!.shipToCity }}, {{ order()!.shipToState }} {{ order()!.shipToPostalCode }}</p>
+              <p>{{ order()!.shipToCountry }}</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">💰 Payment Summary</div>
+            <div class="card-body">
+              <div class="summary-row"><span>Subtotal</span><span>₹{{ order()!.subTotal | number:'1.0-0' }}</span></div>
+              <div class="summary-row"><span>Shipping</span><span>₹{{ order()!.shippingFee | number:'1.0-0' }}</span></div>
+              @if (order()!.discount > 0) {
+                <div class="summary-row text-success"><span>Discount</span><span>-₹{{ order()!.discount | number:'1.0-0' }}</span></div>
+              }
+              <div class="summary-divider"></div>
+              <div class="summary-row total-row"><span>Total</span><span>₹{{ order()!.total | number:'1.0-0' }}</span></div>
+              <div class="summary-row" style="margin-top:0.5rem">
+                <span class="text-muted">Payment Status</span>
+                <span class="badge {{ order()!.paymentStatus === 'Paid' ? 'badge-success' : 'badge-warning' }}">{{ order()!.paymentStatus }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
+
   </div>
 } @else {
   <div class="empty-state">

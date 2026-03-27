@@ -70,28 +70,28 @@ export class ProductDetailComponent implements OnInit {
   }
 
   checkPurchased(productId: number) {
-    this.orderSvc.getMyOrders({ page: 1, size: 100 }).subscribe(r => {
-      // Check if any delivered order contains this product
-      const orderIds = r.items.filter(o => o.status === 'Delivered').map(o => o.id);
-      if (orderIds.length > 0) {
-        // Check first few orders for the product
-        let checked = 0;
-        orderIds.slice(0, 5).forEach(oid => {
-          this.orderSvc.getById(oid).subscribe(order => {
-            if (order.items.some(i => i.productId === productId)) {
+    this.orderSvc.getMyOrders({ page: 1, size: 100, status: 'Delivered' }).subscribe(r => {
+      if (r.items.length === 0) return;
+      let remaining = r.items.length;
+      for (const order of r.items) {
+        this.orderSvc.getById(order.id).subscribe({
+          next: o => {
+            if (o.items.some(i => i.productId === productId)) {
               this.hasPurchased.set(true);
             }
-            checked++;
-          });
+            remaining--;
+          },
+          error: () => remaining--
         });
+        if (this.hasPurchased()) break;
       }
     });
   }
 
   loadMyReview(productId: number) {
     this.reviewSvc.getMineForProduct(productId).subscribe({
-      next: r => this.myReview.set(r),
-      error: () => {}
+      next: r => this.myReview.set(r ?? null),
+      error: () => this.myReview.set(null)
     });
   }
 

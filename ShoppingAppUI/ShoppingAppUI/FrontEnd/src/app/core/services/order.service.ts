@@ -22,7 +22,7 @@ export class OrderService {
     return this.http.get<OrderReadDto>(`${this.api}/${id}`);
   }
 
-  getMyOrders(req: { page: number; size: number; sortBy?: string; desc?: boolean }): Observable<PagedResult<OrderSummaryDto>> {
+  getMyOrders(req: OrderPagedRequest): Observable<PagedResult<OrderSummaryDto>> {
     return this.http.post<PagedResult<OrderSummaryDto>>(`${this.api}/mine`, req);
   }
 

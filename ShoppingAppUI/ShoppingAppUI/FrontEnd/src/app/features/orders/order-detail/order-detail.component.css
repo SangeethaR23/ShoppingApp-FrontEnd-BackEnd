@@ -1,24 +1,174 @@
-.back-link { color:var(--primary);font-weight:600;cursor:pointer; }
-.detail-grid { display:grid;grid-template-columns:1fr 340px;gap:1.5rem;align-items:start; }
-.summary-row { display:flex;justify-content:space-between;padding:0.4rem 0;font-size:0.95rem; }
-.summary-divider { border-top:1px solid var(--border);margin:0.5rem 0; }
-.total-row { font-size:1.1rem;font-weight:800; }
+.back-link { color: var(--primary); font-weight: 600; }
 
-/* Tracking override for horizontal */
-.tracking-steps { display:flex;align-items:flex-start;position:relative;padding:1rem 0; }
-.tracking-step { flex:1;display:flex;flex-direction:column;align-items:center;position:relative; }
-.step-line { position:absolute;top:19px;left:50%;width:100%;height:3px;background:var(--border);z-index:0; }
-.step-line.done { background:var(--primary); }
-.step-circle { width:38px;height:38px;border-radius:50%;border:3px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:1rem;z-index:1;transition:all 0.4s ease; }
-.tracking-step.done .step-circle { border-color:var(--primary);background:var(--primary);color:#fff;animation:popIn 0.4s ease; }
-.tracking-step.current .step-circle { border-color:var(--primary);color:var(--primary);animation:pulse 1.5s infinite; }
-.step-label { font-size:0.72rem;font-weight:600;margin-top:0.5rem;text-align:center;color:var(--text-muted); }
-.tracking-step.done .step-label,.tracking-step.current .step-label { color:var(--primary); }
+/* ── Page layout: tracking left, content right, both same height ── */
+.page-layout {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 1.5rem;
+  align-items: stretch;
+}
 
-@media (max-width:768px) {
-  .detail-grid { grid-template-columns:1fr; }
-  .tracking-steps { flex-direction:column;gap:0; }
-  .tracking-step { flex-direction:row;align-items:center;gap:1rem;width:100%;padding:0.5rem 0; }
-  .step-line { display:none; }
-  .step-label { margin-top:0;text-align:left; }
+/* ── Tracking card stretches full height ── */
+.tracking-card {
+  background: linear-gradient(175deg, #ede9ff 0%, #ddd6fe 100%) !important;
+  box-shadow: var(--shadow) !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.tracking-card .card-header {
+  background: var(--primary-light) !important;
+  border-bottom: 1px solid rgba(108,99,255,0.15);
+  color: var(--primary) !important;
+  font-size: 0.8rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.tracking-card .card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Vertical steps ── */
+.tracking-col {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.track-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.track-item:last-child { flex: 0 0 auto; }
+
+.track-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.step-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(108,99,255,0.2);
+  background: #fff;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  transition: all 0.35s ease;
+}
+
+.step-circle.done {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(108,99,255,0.55);
+  animation: popIn 0.4s ease;
+}
+
+.step-circle.current {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+  animation: pulse 1.5s infinite;
+}
+
+.step-vline {
+  width: 2px;
+  flex: 1;
+  min-height: 32px;
+  background: rgba(108,99,255,0.15);
+  margin: 3px 0;
+  border-radius: 2px;
+  transition: background 0.35s ease;
+}
+
+.step-vline.done { background: var(--primary); }
+
+.step-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding-top: 0.4rem;
+  line-height: 1.3;
+}
+
+.step-label.done,
+.step-label.current { color: var(--primary); }
+
+/* ── Right content ── */
+.order-content { display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* ── Shipping + Payment side by side ── */
+.info-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.info-row .card-body p {
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.info-row .card-body p strong { color: var(--text); font-size: 0.95rem; }
+
+/* ── Summary ── */
+.summary-row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.95rem; }
+.summary-divider { border-top: 1px solid var(--border); margin: 0.5rem 0; }
+.total-row { font-size: 1.1rem; font-weight: 800; }
+
+/* ── Animations ── */
+@keyframes popIn {
+  0% { transform: scale(0.5); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(167,139,250,0.5); }
+  50% { box-shadow: 0 0 0 7px rgba(167,139,250,0); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .page-layout { grid-template-columns: 1fr; }
+
+  .tracking-col { flex-direction: row; }
+
+  .track-item {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .track-left { flex-direction: row; align-items: center; width: 100%; }
+
+  .step-vline {
+    width: 100%;
+    height: 2px;
+    min-height: unset;
+    flex: 1;
+    margin: 0 3px;
+  }
+
+  .step-label { padding-top: 0.3rem; text-align: center; font-size: 0.68rem; }
+}
+
+@media (max-width: 600px) {
+  .info-row { grid-template-columns: 1fr; }
 }

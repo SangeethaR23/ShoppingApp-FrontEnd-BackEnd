@@ -66,10 +66,16 @@
     <div class="reviews-section card" style="margin-top:2rem">
       <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
         <span>Customer Reviews ({{ product()!.reviewsCount }})</span>
-        @if (auth.isLoggedIn() && hasPurchased() && !auth.isAdmin()) {
-          <button class="btn btn-outline btn-sm" (click)="showReviewForm.update(v => !v)">
-            {{ myReview() ? 'Edit Review' : '+ Write Review' }}
-          </button>
+        @if (auth.isLoggedIn() && !auth.isAdmin()) {
+          @if (hasPurchased()) {
+            <button class="btn btn-outline btn-sm" (click)="showReviewForm.update(v => !v)">
+              {{ myReview() ? '✏️ Edit Review' : '+ Write Review' }}
+            </button>
+          } @else {
+            <span style="font-size:0.82rem;color:var(--text-muted);font-style:italic">
+              🛒 Purchase this product to write a review
+            </span>
+          }
         }
       </div>
       <div class="card-body">

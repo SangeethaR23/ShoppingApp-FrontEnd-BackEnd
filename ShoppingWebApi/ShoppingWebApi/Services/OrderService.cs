@@ -333,7 +333,9 @@ namespace ShoppingWebApi.Services
         // USER ORDERS (paged) — NO payment in DTO
         // ----------------------------------------------------------------------
         public async Task<PagedResult<OrderSummaryDto>> GetUserOrdersAsync(
-            int userId, int page = 1, int size = 10, string? sortBy = "date", bool desc = true, CancellationToken ct = default)
+            int userId, int page = 1, int size = 10, string? sortBy = "date", bool desc = true,
+            string? status = null, DateTime? from = null, DateTime? to = null,
+            CancellationToken ct = default)
         {
             await _loggerDb.InfoAsync("OrderService.GetUserOrdersAsync", "List user orders", ct: ct);
 
@@ -343,6 +345,13 @@ namespace ShoppingWebApi.Services
             var q = _orderRepo.GetQueryable()
                 .AsNoTracking()
                 .Where(o => o.UserId == userId);
+
+            if (!string.IsNullOrWhiteSpace(status) &&
+                Enum.TryParse<ShoppingWebApi.Models.enums.OrderStatus>(status, true, out var parsedStatus))
+                q = q.Where(o => o.Status == parsedStatus);
+
+            if (from.HasValue) q = q.Where(o => o.PlacedAtUtc >= from.Value);
+            if (to.HasValue)   q = q.Where(o => o.PlacedAtUtc <= to.Value.AddDays(1));
 
             q = (sortBy?.ToLowerInvariant()) switch
             {

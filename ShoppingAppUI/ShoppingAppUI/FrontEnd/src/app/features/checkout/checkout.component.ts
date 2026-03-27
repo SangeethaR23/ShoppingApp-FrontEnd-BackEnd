@@ -92,4 +92,8 @@ export class CheckoutComponent implements OnInit {
   }
 
   goOrders() { this.router.navigate(['/orders']); }
+
+  removeFromCart(productId: number) {
+    this.cartSvc.removeItem(productId).subscribe();
+  }
 }

@@ -6,6 +6,7 @@ using ShoppingWebApi.Exceptions;
 using ShoppingWebApi.Interfaces;
 using ShoppingWebApi.Models.DTOs.Common;
 using ShoppingWebApi.Models.DTOs.Orders;
+using ShoppingWebApi.Models.DTOs.Return;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,9 +41,11 @@ namespace ShoppingWebApi.Controllers
 
                 var res = await _service.PlaceOrderAsync(request, ct);
                 return CreatedAtAction(nameof(GetById), new { id = res.Id }, res);
-            }catch(BusinessValidationException)
+            }catch(BusinessValidationException e)
             {
-                return BadRequest(new { message = "Insufficient inventory for product"});
+                //return BadRequest(new { message = "Insufficient inventory for product"});
+                return BadRequest(e.Message);
+
             }
         }
 
@@ -77,6 +80,9 @@ namespace ShoppingWebApi.Controllers
                 request.Size,
                 request.SortBy,
                 request.Desc,
+                request.Status,
+                request.From,
+                request.To,
                 ct);
 
             return Ok(result);
@@ -95,11 +101,41 @@ namespace ShoppingWebApi.Controllers
         {
             var userId = User.GetUserId();
             if (userId is null) return Unauthorized();
+            try
+            {
 
-            var isAdmin = User.IsInRole("Admin");
+                var isAdmin = User.IsInRole("Admin");
 
-            var result = await _service.CancelOrderAsync(id, userId.Value, isAdmin, reason, ct);
-            return Ok(result);
+                var result = await _service.CancelOrderAsync(id, userId.Value, isAdmin, reason, ct);
+                return Ok(result);
+            }catch(ConflictException )
+            {
+                throw;
+            }
+        }
+
+        // ============================================
+        // RETURN ORDER
+        // ============================================
+        [Authorize]
+        [HttpPost("{id:int}/return")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> Return(
+            int id,
+            [FromQuery] string? reason = null,
+            CancellationToken ct = default)
+        {
+            var userId = User.GetUserId();
+            if (userId is null) return Unauthorized();
+
+            try
+            {
+                var dto = new ReturnRequestCreateDto { OrderId = id, Reason = reason ?? "Return requested by user" };
+                await _service.RequestReturnAsync(userId.Value, dto, ct);
+                return Ok(new { message = "Return request submitted successfully." });
+            }
+            catch (NotFoundException e) { return NotFound(new { message = e.Message }); }
+            catch (BusinessValidationException e) { return BadRequest(new { message = e.Message }); }
         }
 
         // ============================================

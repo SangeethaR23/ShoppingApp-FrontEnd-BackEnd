@@ -1,6 +1,24 @@
 <div class="container" style="padding:2rem 1.5rem">
   <h1 class="section-title">My Orders</h1>
 
+  <!-- Filters -->
+  <div class="filter-bar">
+    <select class="form-control filter-select" [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()">
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ s || 'All Statuses' }}</option>
+      }
+    </select>
+    <div class="filter-date-group">
+      <input type="date" class="form-control" [(ngModel)]="fromDate" placeholder="From">
+      <span class="date-sep">→</span>
+      <input type="date" class="form-control" [(ngModel)]="toDate" placeholder="To">
+    </div>
+    <button class="btn btn-primary btn-sm" (click)="applyFilters()">Apply</button>
+    @if (statusFilter || fromDate || toDate) {
+      <button class="btn btn-outline btn-sm" (click)="clearFilters()">✕ Clear</button>
+    }
+  </div>
+
   @if (orders().length > 0) {
     <div class="orders-list">
       @for (order of orders(); track order.id) {

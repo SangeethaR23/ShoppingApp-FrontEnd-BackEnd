@@ -41,6 +41,14 @@
       </div>
 
       <div class="form-group">
+        <label class="form-label">Role</label>
+        <select formControlName="role" class="form-control">
+          <option value="User">User</option>
+          <option value="Admin">Admin</option>
+        </select>
+      </div>
+
+      <div class="form-group">
         <label class="form-label">Password</label>
         <div class="pass-wrap">
           <input formControlName="password" [type]="showPass() ? 'text' : 'password'" class="form-control" placeholder="Min 6 characters">

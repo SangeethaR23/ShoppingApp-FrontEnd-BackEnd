@@ -42,7 +42,8 @@ export class AppComponent implements OnInit {
     effect(() => {
       const loggedIn = this.auth.isLoggedIn();
       const isAdmin = this.auth.isAdmin();
-      if (loggedIn && !isAdmin) {
+      const userId = this.auth.userId();
+      if (loggedIn && !isAdmin && userId) {
         this.cart.loadCart().subscribe({ error: () => {} });
         this.wishlist.load().subscribe({ error: () => {} });
       } else if (!loggedIn) {

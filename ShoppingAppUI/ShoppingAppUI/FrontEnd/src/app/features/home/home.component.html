@@ -3,14 +3,27 @@
   <div class="carousel">
     @for (slide of slides; track $index) {
       <div class="slide" [class.active]="currentSlide() === $index" [style.background]="slide.bg">
+        <!-- Text side -->
         <div class="slide-content">
-          <div class="slide-icon">{{ slide.icon }}</div>
+          <span class="slide-badge">{{ slide.badge }}</span>
           <h1 class="slide-title">{{ slide.title }}</h1>
           <p class="slide-sub">{{ slide.sub }}</p>
-          <a routerLink="/products" class="btn btn-lg" style="background:#fff;color:var(--primary);font-weight:700">Shop Now →</a>
+          <div class="slide-actions">
+            <a routerLink="/products" class="btn btn-hero">{{ slide.cta }}</a>
+            <span class="slide-tag">{{ slide.tag }}</span>
+          </div>
+        </div>
+        <!-- Image side -->
+        <div class="slide-img-wrap">
+          <img [src]="slide.img" [alt]="slide.imgAlt" class="slide-img">
         </div>
       </div>
     }
+
+    <!-- Prev / Next arrows -->
+    <button class="carousel-arrow arrow-prev" (click)="prevSlide()">&#8249;</button>
+    <button class="carousel-arrow arrow-next" (click)="nextSlide()">&#8250;</button>
+
     <div class="carousel-dots">
       @for (slide of slides; track $index) {
         <button class="dot" [class.active]="currentSlide() === $index" (click)="goSlide($index)"></button>
@@ -27,7 +40,9 @@
     <div class="categories-grid">
       @for (cat of categories(); track cat.id) {
         <div class="category-card" (click)="goCategory(cat.id)">
-          <div class="cat-icon">🏷️</div>
+          <div class="cat-tile" [style.background]="getCategoryGradient(cat.name)">
+            <span class="material-icons cat-icon">{{ getCategoryIcon(cat.name) }}</span>
+          </div>
           <div class="cat-name">{{ cat.name }}</div>
         </div>
       }

@@ -1,10 +1,12 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { DecimalPipe, DatePipe } from '@angular/common';
 import { UserService } from '../../core/services/user.service';
 import { AddressService } from '../../core/services/address.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
+import { WalletService, WalletTransaction } from '../../core/services/wallet.service';
 import { UserProfileReadDto } from '../../core/models/user.models';
 import { AddressReadDto } from '../../core/models/address.models';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
@@ -12,7 +14,7 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dial
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, RouterLinkActive, ConfirmDialogComponent],
+  imports: [ReactiveFormsModule, RouterLink, RouterLinkActive, ConfirmDialogComponent, DecimalPipe, DatePipe],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.css']
 })
@@ -22,15 +24,23 @@ export class ProfileComponent implements OnInit {
   private addressSvc = inject(AddressService);
   auth = inject(AuthService);
   private toast = inject(ToastService);
+  private walletSvc = inject(WalletService);
 
   profile = signal<UserProfileReadDto | null>(null);
   addresses = signal<AddressReadDto[]>([]);
-  activeTab = signal<'profile' | 'password' | 'addresses'>('profile');
+  activeTab = signal<'profile' | 'password' | 'addresses' | 'wallet'>('profile');
   editingAddress = signal<AddressReadDto | null>(null);
   showAddressForm = signal(false);
   deleteAddressTarget = signal<number | null>(null);
   showDeleteConfirm = signal(false);
   saving = signal(false);
+
+  // Wallet
+  walletBalance = signal<number>(0);
+  walletTransactions = signal<WalletTransaction[]>([]);
+  walletLoading = signal(false);
+  creditAmount = signal<number | null>(null);
+  crediting = signal(false);
 
   profileForm = this.fb.group({
     firstName: ['', Validators.required],
@@ -65,6 +75,37 @@ export class ProfileComponent implements OnInit {
       });
     });
     this.loadAddresses();
+    this.loadWallet();
+  }
+
+  loadWallet() {
+    this.walletLoading.set(true);
+    this.walletSvc.getMyWallet().subscribe({
+      next: w => {
+        this.walletBalance.set(w.balance);
+        this.walletSvc.getTransactions(1, 10).subscribe(r => {
+          this.walletTransactions.set(r.items);
+          this.walletLoading.set(false);
+        });
+      },
+      error: () => this.walletLoading.set(false)
+    });
+  }
+
+  creditWallet() {
+    const amount = this.creditAmount();
+    if (!amount || amount <= 0) { this.toast.error('Enter a valid amount'); return; }
+    this.crediting.set(true);
+    this.walletSvc.credit(amount).subscribe({
+      next: r => {
+        this.walletBalance.set(r.balance);
+        this.toast.success(`₹${amount} credited to wallet`);
+        this.creditAmount.set(null);
+        this.crediting.set(false);
+        this.walletSvc.getTransactions(1, 10).subscribe(res => this.walletTransactions.set(res.items));
+      },
+      error: () => this.crediting.set(false)
+    });
   }
 
   loadAddresses() {
