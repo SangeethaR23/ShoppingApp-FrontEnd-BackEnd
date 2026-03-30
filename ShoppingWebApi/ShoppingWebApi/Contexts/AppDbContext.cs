@@ -257,17 +257,6 @@ namespace ShoppingWebApi.Contexts
                 .OnDelete(DeleteBehavior.Cascade);
 
 
-
-
-
-
-
-
-
-
-
-
-
         }
     }
 }
