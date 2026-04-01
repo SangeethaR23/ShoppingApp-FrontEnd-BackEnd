@@ -248,9 +248,7 @@ namespace ShoppingWebApi.Services
                 }
                 else
                 {
-                    addedOrder.PaymentStatus = (total == 0m)
-                        ? PaymentStatus.Paid
-                        : PaymentStatus.Pending;
+                    addedOrder.PaymentStatus = PaymentStatus.Paid;
                 }
 
                 addedOrder.UpdatedUtc = DateTime.UtcNow;

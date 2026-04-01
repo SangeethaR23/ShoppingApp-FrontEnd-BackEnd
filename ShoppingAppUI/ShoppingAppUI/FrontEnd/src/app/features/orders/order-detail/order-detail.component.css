@@ -110,6 +110,9 @@
 /* ── Right content ── */
 .order-content { display: flex; flex-direction: column; gap: 1.5rem; }
 
+/* ── Full width when no tracking (cancelled/returned orders) ── */
+.order-content-full { display: flex; flex-direction: column; gap: 1.5rem; }
+
 /* ── Shipping + Payment side by side ── */
 .info-row {
   display: grid;
