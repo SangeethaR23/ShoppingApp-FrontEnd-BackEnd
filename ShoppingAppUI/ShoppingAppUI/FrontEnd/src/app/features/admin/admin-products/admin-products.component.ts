@@ -113,12 +113,14 @@ export class AdminProductsComponent implements OnInit {
     const val = this.form.value as any;
     const editing = this.editingProduct();
     if (editing) {
-      this.productSvc.update(editing.id, { ...val, id: editing.id }).subscribe(() => {
-        this.toast.success('Product updated'); this.showForm.set(false); this.load();
+      this.productSvc.update(editing.id, { ...val, id: editing.id }).subscribe({
+        next: () => { this.toast.success('Product updated'); this.showForm.set(false); this.load(); },
+        error: () => {}
       });
     } else {
-      this.productSvc.create(val).subscribe(() => {
-        this.toast.success('Product created'); this.showForm.set(false); this.load();
+      this.productSvc.create(val).subscribe({
+        next: () => { this.toast.success('Product created'); this.showForm.set(false); this.load(); },
+        error: () => {}
       });
     }
   }
@@ -136,8 +138,9 @@ export class AdminProductsComponent implements OnInit {
   addImage() {
     const id = this.imageProductId();
     if (!id || !this.imageUrl()) return;
-    this.productSvc.addImage(id, { url: this.imageUrl() }).subscribe(() => {
-      this.toast.success('Image added'); this.showImageForm.set(false);
+    this.productSvc.addImage(id, { url: this.imageUrl() }).subscribe({
+      next: () => { this.toast.success('Image added'); this.showImageForm.set(false); },
+      error: () => {}
     });
   }
 

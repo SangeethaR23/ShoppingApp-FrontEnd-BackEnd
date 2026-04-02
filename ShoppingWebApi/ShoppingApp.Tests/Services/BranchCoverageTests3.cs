@@ -235,11 +235,15 @@ public class ProductBranchTests2
     {
         _productRepo.Setup(r => r.GetQueryable()).Returns(() => ctx.Products);
         return new ProductService(_productRepo.Object, _categoryRepo.Object,
-            _imageRepo.Object, _inventoryRepo.Object, _mapper);
+            _imageRepo.Object, _inventoryRepo.Object, ctx, _mapper);
     }
 
-    private ProductService MockSut() => new(_productRepo.Object, _categoryRepo.Object,
-        _imageRepo.Object, _inventoryRepo.Object, _mapper);
+    private ProductService MockSut()
+    {
+        var opts = new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
+        var db = new AppDbContext(opts);
+        return new(_productRepo.Object, _categoryRepo.Object, _imageRepo.Object, _inventoryRepo.Object, db, _mapper);
+    }
 
     // Update — category not found after product found
     [Fact]
@@ -367,7 +371,7 @@ public class OrderBranchTests2
             userRepo.Object, addressRepo.Object, cartRepo.Object, _cartItemRepo.Object,
             _orderRepo.Object, _orderItemRepo.Object, invRepo.Object,
             _paymentRepo.Object, _refundRepo.Object, retRepo.Object,
-            _promoSvc.Object, _walletSvc.Object, _logWriter.Object, _logger.Object);
+            _promoSvc.Object, _walletSvc.Object, ctx, _logWriter.Object, _logger.Object);
     }
 
     private void SeedValidScenario(AppDbContext ctx, string paymentType = "UPI")

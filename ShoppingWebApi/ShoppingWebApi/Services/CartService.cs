@@ -1,5 +1,6 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using ShoppingWebApi.Common;
 using ShoppingWebApi.Contexts;
 using ShoppingWebApi.Exceptions;
 using ShoppingWebApi.Interfaces;
@@ -105,36 +106,47 @@ namespace ShoppingWebApi.Services
             if (!product.IsActive)
                 throw new BusinessValidationException("Product is inactive.");
 
-            // Find or create cart
-            var carts = await _cartRepo.GetAll() ?? Enumerable.Empty<Carts>();
-            var cart = carts.FirstOrDefault(c => c.UserId == userId);
-
-            if (cart == null)
+            await using var tx = await _db.Database.BeginTransactionSafeAsync(ct);
+            try
             {
-                cart = await _cartRepo.Add(new Carts { UserId = userId });
+                // Find or create cart
+                var carts = await _cartRepo.GetAll() ?? Enumerable.Empty<Carts>();
+                var cart = carts.FirstOrDefault(c => c.UserId == userId);
+
                 if (cart == null)
-                    throw new BusinessValidationException("Failed to create cart.");
-            }
-
-            // Get all items of this cart
-            var items = await _cartItemRepo.GetAll() ?? Enumerable.Empty<CartItem>();
-            var existingItem = items.FirstOrDefault(i => i.CartId == cart.Id && i.ProductId == dto.ProductId);
-
-            if (existingItem != null)
-            {
-                existingItem.Quantity += dto.Quantity;
-                existingItem.UpdatedUtc = DateTime.UtcNow;
-                await _cartItemRepo.Update(existingItem.Id, existingItem);
-            }
-            else
-            {
-                await _cartItemRepo.Add(new CartItem
                 {
-                    CartId = cart.Id,
-                    ProductId = dto.ProductId,
-                    Quantity = dto.Quantity,
-                    UnitPrice = product.Price
-                });
+                    cart = await _cartRepo.Add(new Carts { UserId = userId });
+                    if (cart == null)
+                        throw new BusinessValidationException("Failed to create cart.");
+                }
+
+                // Get all items of this cart
+                var items = await _cartItemRepo.GetAll() ?? Enumerable.Empty<CartItem>();
+                var existingItem = items.FirstOrDefault(i => i.CartId == cart.Id && i.ProductId == dto.ProductId);
+
+                if (existingItem != null)
+                {
+                    existingItem.Quantity += dto.Quantity;
+                    existingItem.UpdatedUtc = DateTime.UtcNow;
+                    await _cartItemRepo.Update(existingItem.Id, existingItem);
+                }
+                else
+                {
+                    await _cartItemRepo.Add(new CartItem
+                    {
+                        CartId = cart.Id,
+                        ProductId = dto.ProductId,
+                        Quantity = dto.Quantity,
+                        UnitPrice = product.Price
+                    });
+                }
+
+                await tx.CommitAsync(ct);
+            }
+            catch
+            {
+                await tx.RollbackAsync(ct);
+                throw;
             }
 
             return await GetByUserIdAsync(userId, ct);
@@ -205,8 +217,19 @@ namespace ShoppingWebApi.Services
             var items = await _cartItemRepo.GetAll() ?? Enumerable.Empty<CartItem>();
             var userItems = items.Where(i => i.CartId == cart.Id).ToList();
 
-            foreach (var item in userItems)
-                await _cartItemRepo.Delete(item.Id);
+            await using var tx = await _db.Database.BeginTransactionSafeAsync(ct);
+            try
+            {
+                foreach (var item in userItems)
+                    await _cartItemRepo.Delete(item.Id);
+
+                await tx.CommitAsync(ct);
+            }
+            catch
+            {
+                await tx.RollbackAsync(ct);
+                throw;
+            }
         }
     }
 }

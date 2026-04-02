@@ -13,35 +13,20 @@ namespace ShoppingWebApi.Controllers
     {
         private readonly IAuthService _auth;
 
-        public AuthController(IAuthService auth)
-        {
-            _auth = auth;
-        }
+        public AuthController(IAuthService auth) => _auth = auth;
 
         [HttpPost("register")]
-        [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto, CancellationToken ct)
         {
-            try
-            {
-                var res = await _auth.RegisterAsync(dto, ct);
-                return Created(string.Empty, res);
-            }
-            catch { throw; }
+            var res = await _auth.RegisterAsync(dto, ct);
+            return Created(string.Empty, res);
         }
 
         [HttpPost("login")]
-        [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto dto, CancellationToken ct)
         {
-            try
-            {
-                var res = await _auth.LoginAsync(dto, ct);
-                return Ok(res);
-            }
-            catch { throw; }
+            var res = await _auth.LoginAsync(dto, ct);
+            return Ok(res);
         }
     }
 }

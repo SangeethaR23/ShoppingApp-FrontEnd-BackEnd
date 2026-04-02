@@ -30,7 +30,7 @@ public class UserServiceAdditionalTests
     private UserService BuildSut(AppDbContext ctx)
     {
         _userRepoMock.Setup(r => r.GetQueryable()).Returns(() => ctx.Users);
-        return new UserService(_userRepoMock.Object, _detailsRepoMock.Object, _loggerMock.Object);
+        return new UserService(_userRepoMock.Object, _detailsRepoMock.Object, ctx, _loggerMock.Object);
     }
 
     // ── GetProfileAsync ───────────────────────────────────────────────────────

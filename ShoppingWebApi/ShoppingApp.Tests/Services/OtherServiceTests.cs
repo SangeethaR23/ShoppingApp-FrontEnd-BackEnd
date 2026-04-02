@@ -568,7 +568,7 @@ public class UserServiceTests
     private UserService BuildSut(AppDbContext ctx)
     {
         _userRepoMock.Setup(r => r.GetQueryable()).Returns(() => ctx.Users);
-        return new UserService(_userRepoMock.Object, _userDetailsRepoMock.Object, _loggerMock.Object);
+        return new UserService(_userRepoMock.Object, _userDetailsRepoMock.Object, ctx, _loggerMock.Object);
     }
 
     [Fact]

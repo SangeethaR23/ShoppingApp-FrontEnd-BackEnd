@@ -39,10 +39,7 @@
     <p class="section-subtitle">Find exactly what you're looking for</p>
     <div class="categories-grid">
       @for (cat of categories(); track cat.id) {
-        <div class="category-card" (click)="goCategory(cat.id)">
-          <div class="cat-tile" [style.background]="getCategoryGradient(cat.name)">
-            <span class="material-icons cat-icon">{{ getCategoryIcon(cat.name) }}</span>
-          </div>
+        <div class="category-card" (click)="goCategory(cat.id)" [style.background]="getCategoryGradient(cat.name)">
           <div class="cat-name">{{ cat.name }}</div>
         </div>
       }

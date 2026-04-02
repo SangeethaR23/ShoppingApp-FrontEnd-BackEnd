@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using ShoppingWebApi.Common;
 using ShoppingWebApi.Contexts;
 using ShoppingWebApi.Exceptions;
 using ShoppingWebApi.Interfaces;
@@ -32,7 +33,7 @@ namespace ShoppingWebApi.Services
                 if (amount <= 0)
                     throw new BusinessValidationException("Credit amount must be positive.");
 
-                // ✅ AUTO-CREATE WALLET IF NOT EXISTS
+                // ? AUTO-CREATE WALLET IF NOT EXISTS
                 var wallet = await _db.Wallets.FirstOrDefaultAsync(w => w.UserId == userId, ct);
                 if (wallet == null)
                 {
@@ -45,7 +46,7 @@ namespace ShoppingWebApi.Services
                     await _db.SaveChangesAsync(ct);
                 }
 
-                using var tx = await _db.Database.BeginTransactionAsync(ct);
+                using var tx = await _db.Database.BeginTransactionSafeAsync(ct);
 
                 wallet.Balance += amount;
                 wallet.UpdatedUtc = DateTime.UtcNow;
@@ -77,7 +78,7 @@ namespace ShoppingWebApi.Services
                 if (amount <= 0)
                     throw new BusinessValidationException("Debit amount must be positive.");
 
-                // ✅ Wallet must exist for debit
+                // ? Wallet must exist for debit
                 var wallet = await _db.Wallets.FirstOrDefaultAsync(w => w.UserId == userId, ct);
                 if (wallet == null)
                     throw new NotFoundException("Wallet not found for this user.");
@@ -85,7 +86,7 @@ namespace ShoppingWebApi.Services
                 if (wallet.Balance < amount)
                     throw new BusinessValidationException("Insufficient wallet balance.");
 
-                using var tx = await _db.Database.BeginTransactionAsync(ct);
+                using var tx = await _db.Database.BeginTransactionSafeAsync(ct);
 
                 wallet.Balance -= amount;
                 wallet.UpdatedUtc = DateTime.UtcNow;

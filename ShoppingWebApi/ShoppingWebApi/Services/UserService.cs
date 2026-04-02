@@ -1,9 +1,11 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using ShoppingWebApi.Common;
+using ShoppingWebApi.Contexts;
 using ShoppingWebApi.Exceptions;
 using ShoppingWebApi.Interfaces;
 using ShoppingWebApi.Models;
@@ -17,15 +19,18 @@ namespace ShoppingWebApi.Services
     {
         private readonly IRepository<int, User> _userRepo;
         private readonly IRepository<int, UserDetails> _userDetailsRepo;
+        private readonly AppDbContext _db;
         private readonly ILogger<UserService> _logger;
 
         public UserService(
             IRepository<int, User> userRepo,
             IRepository<int, UserDetails> userDetailsRepo,
+            AppDbContext db,
             ILogger<UserService> logger)
         {
             _userRepo = userRepo;
             _userDetailsRepo = userDetailsRepo;
+            _db = db;
             _logger = logger;
         }
 
@@ -143,42 +148,49 @@ namespace ShoppingWebApi.Services
 
             if (u == null) throw new NotFoundException("User not found.");
 
-            if (u.UserDetails == null)
+            await using var tx = await _db.Database.BeginTransactionSafeAsync(ct);
+            try
             {
-                // Create details row
-                var details = new UserDetails
+                if (u.UserDetails == null)
                 {
-                    UserId = userId,
-                    FirstName = string.IsNullOrWhiteSpace(dto.FirstName) ? " " : dto.FirstName!.Trim(),
-                    LastName = string.IsNullOrWhiteSpace(dto.LastName) ? " " : dto.LastName!.Trim(),
-                    Phone = dto.Phone,
-                    DateOfBirth = dto.DateOfBirth
-                };
+                    var details = new UserDetails
+                    {
+                        UserId = userId,
+                        FirstName = string.IsNullOrWhiteSpace(dto.FirstName) ? " " : dto.FirstName!.Trim(),
+                        LastName = string.IsNullOrWhiteSpace(dto.LastName) ? " " : dto.LastName!.Trim(),
+                        Phone = dto.Phone,
+                        DateOfBirth = dto.DateOfBirth
+                    };
 
-                var added = await _userDetailsRepo.Add(details);
-                // Reattach to user for return consistency
-                u.UserDetails = added!;
-            }
-            else
-            {
-                if (dto.FirstName != null) u.UserDetails.FirstName = dto.FirstName.Trim();
-                if (dto.LastName != null) u.UserDetails.LastName = dto.LastName.Trim();
-                if (dto.Phone != null) u.UserDetails.Phone = dto.Phone;
-                if (dto.DateOfBirth.HasValue) u.UserDetails.DateOfBirth = dto.DateOfBirth;
+                    var added = await _userDetailsRepo.Add(details);
+                    u.UserDetails = added!;
+                }
+                else
+                {
+                    if (dto.FirstName != null) u.UserDetails.FirstName = dto.FirstName.Trim();
+                    if (dto.LastName != null) u.UserDetails.LastName = dto.LastName.Trim();
+                    if (dto.Phone != null) u.UserDetails.Phone = dto.Phone;
+                    if (dto.DateOfBirth.HasValue) u.UserDetails.DateOfBirth = dto.DateOfBirth;
 
-                u.UserDetails.UserId = u.Id;
+                    u.UserDetails.UserId = u.Id;
+                    u.UpdatedUtc = DateTime.UtcNow;
+
+                    await _userDetailsRepo.Update(u.UserDetails.UserId, u.UserDetails);
+                }
+
+                if (string.IsNullOrWhiteSpace(u.UserDetails!.FirstName) || string.IsNullOrWhiteSpace(u.UserDetails!.LastName))
+                    throw new BusinessValidationException("FirstName and LastName cannot be empty.");
+
                 u.UpdatedUtc = DateTime.UtcNow;
+                await _userRepo.Update(u.Id, u);
 
-                await _userDetailsRepo.Update(u.UserDetails.UserId, u.UserDetails);
+                await tx.CommitAsync(ct);
             }
-
-            // Ensure non-empty first/last after update
-            if (string.IsNullOrWhiteSpace(u.UserDetails!.FirstName) || string.IsNullOrWhiteSpace(u.UserDetails!.LastName))
-                throw new BusinessValidationException("FirstName and LastName cannot be empty.");
-
-            // Persist a small touch on user updated time if needed
-            u.UpdatedUtc = DateTime.UtcNow;
-            await _userRepo.Update(u.Id, u);
+            catch
+            {
+                await tx.RollbackAsync(ct);
+                throw;
+            }
 
             return ToProfileDto(u);
         }

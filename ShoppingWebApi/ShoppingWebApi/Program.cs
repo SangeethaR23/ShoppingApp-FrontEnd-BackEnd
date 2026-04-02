@@ -149,7 +149,7 @@ var app = builder.Build();
 //dataseeding
 
 //middeleware order
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+//app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

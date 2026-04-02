@@ -82,7 +82,7 @@ public class OrderServiceAdditionalTests
             userRepo.Object, addressRepo.Object, cartRepo.Object, _cartItemRepoMock.Object,
             _orderRepoMock.Object, _orderItemRepoMock.Object, invRepo.Object,
             _paymentRepoMock.Object, _refundRepoMock.Object, retRepo.Object,
-            _promoServiceMock.Object, _walletServiceMock.Object,
+            _promoServiceMock.Object, _walletServiceMock.Object, ctx,
             _logWriterMock.Object, _loggerMock.Object);
     }
 

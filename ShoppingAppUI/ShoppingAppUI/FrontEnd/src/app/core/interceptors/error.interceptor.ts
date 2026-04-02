@@ -12,20 +12,33 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
+      // err.error may be a raw string when Content-Type is application/problem+json
+      const body = typeof err.error === 'string' ? tryParse(err.error) : err.error;
+
       if (err.status === 401) {
-        auth.logout();
-        router.navigate(['/auth/login']);
-        toast.error('Session expired. Please login again.');
+        const msg = body?.detail || body?.title || 'Unauthorized.';
+        // Only logout + redirect if the user was already authenticated
+        if (auth.isLoggedIn()) {
+          auth.logout();
+          router.navigate(['/auth/login']);
+          toast.error('Session expired. Please login again.');
+        } else {
+          toast.error(msg);
+        }
       } else if (err.status === 403) {
         toast.error('Access denied. You do not have permission.');
         router.navigate(['/forbidden']);
       } else if (err.status === 0) {
         toast.error('Cannot connect to server. Please try again.');
       } else {
-        const msg = err.error?.message || err.error?.detail || err.message || 'Something went wrong.';
-        toast.error(msg);
+        const msg = body?.detail || body?.title;
+        // toast.error(msg);
       }
       return throwError(() => err);
     })
   );
 };
+
+function tryParse(str: string): any {
+  try { return JSON.parse(str); } catch { return null; }
+}

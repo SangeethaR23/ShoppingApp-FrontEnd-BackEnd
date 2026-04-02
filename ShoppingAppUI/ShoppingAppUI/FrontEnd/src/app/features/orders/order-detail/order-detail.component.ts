@@ -33,17 +33,23 @@ export class OrderDetailComponent implements OnInit {
   canReturn() { return this.order()?.status === 'Delivered'; }
 
   doCancel() {
-    this.orderSvc.cancelOrder(this.order()!.id, 'Cancelled by user').subscribe(r => {
-      this.toast.success(r.message);
-      this.orderSvc.getById(this.order()!.id).subscribe(o => this.order.set(o));
+    this.orderSvc.cancelOrder(this.order()!.id, 'Cancelled by user').subscribe({
+      next: r => {
+        this.toast.success(r.message);
+        this.orderSvc.getById(this.order()!.id).subscribe(o => this.order.set(o));
+      },
+      error: () => {}
     });
     this.showCancelConfirm.set(false);
   }
 
   doReturn() {
-    this.orderSvc.returnOrder(this.order()!.id, 'Return requested by user').subscribe(() => {
-      this.toast.success('Return request submitted');
-      this.orderSvc.getById(this.order()!.id).subscribe(o => this.order.set(o));
+    this.orderSvc.returnOrder(this.order()!.id, 'Return requested by user').subscribe({
+      next: () => {
+        this.toast.success('Return request submitted');
+        this.orderSvc.getById(this.order()!.id).subscribe(o => this.order.set(o));
+      },
+      error: () => {}
     });
     this.showReturnConfirm.set(false);
   }

@@ -1,5 +1,7 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using ShoppingWebApi.Common;
+using ShoppingWebApi.Contexts;
 using ShoppingWebApi.Exceptions;
 using ShoppingWebApi.Interfaces;
 using ShoppingWebApi.Models;
@@ -16,7 +18,7 @@ namespace ShoppingWebApi.Services
         private readonly IRepository<int, Category> _categoryRepo;
         private readonly IRepository<int, ProductImage> _imageRepo;
         private readonly IRepository<int, Inventory> _inventoryRepo;
-
+        private readonly AppDbContext _db;
         private readonly IMapper _mapper;
 
         public ProductService(
@@ -24,12 +26,14 @@ namespace ShoppingWebApi.Services
             IRepository<int, Category> categoryRepo,
             IRepository<int, ProductImage> imageRepo,
             IRepository<int, Inventory> inventoryRepo,
+            AppDbContext db,
             IMapper mapper)
         {
             _productRepo = productRepo;
             _categoryRepo = categoryRepo;
             _imageRepo = imageRepo;
             _inventoryRepo = inventoryRepo;
+            _db = db;
             _mapper = mapper;
         }
 
@@ -56,17 +60,28 @@ namespace ShoppingWebApi.Services
                 IsActive = dto.IsActive
             };
 
-            var added = await _productRepo.Add(entity);
-            if (added is null)
-                throw new BusinessValidationException("Failed to create product.");
-
-            // Create 1:1 Inventory
-            await _inventoryRepo.Add(new Inventory
+            await using var tx = await _db.Database.BeginTransactionSafeAsync(ct);
+            Product added;
+            try
             {
-                ProductId = added.Id,
-                Quantity = 0,
-                ReorderLevel = 0
-            });
+                added = await _productRepo.Add(entity);
+                if (added is null)
+                    throw new BusinessValidationException("Failed to create product.");
+
+                await _inventoryRepo.Add(new Inventory
+                {
+                    ProductId = added.Id,
+                    Quantity = 0,
+                    ReorderLevel = 0
+                });
+
+                await tx.CommitAsync(ct);
+            }
+            catch
+            {
+                await tx.RollbackAsync(ct);
+                throw;
+            }
 
             // Return with images 
             var dtoOut = _mapper.Map<ProductReadDto>(added);

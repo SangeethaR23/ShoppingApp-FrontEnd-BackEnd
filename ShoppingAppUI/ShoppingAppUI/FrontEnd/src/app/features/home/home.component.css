@@ -86,26 +86,24 @@
 
 /* CATEGORIES */
 .category-card {
-  background: var(--surface); border-radius: 16px; padding: 1.25rem 0.75rem;
-  text-align: center; cursor: pointer; box-shadow: var(--shadow);
-  transition: all 0.25s; border: 2px solid transparent;
+  border-radius: 14px; padding: 1.1rem 1rem;
+  text-align: center; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  transition: all 0.25s; border: none;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 72px;
 }
 .category-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 32px rgba(108,99,255,0.18);
-  border-color: rgba(108,99,255,0.2);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.2);
+  filter: brightness(1.08);
 }
-.category-card:hover .cat-tile { transform: scale(1.08); }
-
-.cat-tile {
-  width: 68px; height: 68px; border-radius: 18px;
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 0.85rem;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-  transition: transform 0.25s;
+.cat-name {
+  font-weight: 700; font-size: 0.92rem;
+  color: #fff; line-height: 1.3;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  letter-spacing: 0.2px;
 }
-.cat-icon { font-size: 2rem; color: #fff; }
-.cat-name { font-weight: 700; font-size: 0.88rem; color: var(--text); line-height: 1.3; }
 
 /* FEATURES */
 .features-strip { background: var(--primary); padding: 2rem 0; }

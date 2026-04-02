@@ -107,7 +107,7 @@ namespace ShoppingApp.Tests.Services
                 _orderRepoMock.Object, _orderItemRepoMock.Object,
                 inventoryRepoMock.Object, _paymentRepoMock.Object,
                 _refundRepoMock.Object, returnRepoMock.Object,
-                _promoServiceMock.Object, _walletServiceMock.Object,
+                _promoServiceMock.Object, _walletServiceMock.Object, ctx,
                 _logWriterMock.Object, _loggerMock.Object);
         }
 

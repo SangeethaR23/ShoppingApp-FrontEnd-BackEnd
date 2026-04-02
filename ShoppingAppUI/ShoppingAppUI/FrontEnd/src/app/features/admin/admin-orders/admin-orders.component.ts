@@ -72,8 +72,9 @@ export class AdminOrdersComponent implements OnInit {
   }
   updateStatus() {
     const order = this.statusTarget()!;
-    this.orderSvc.updateStatus(order.id, { status: this.newStatus() }).subscribe(() => {
-      this.toast.success('Order status updated'); this.showStatusModal.set(false); this.load();
+    this.orderSvc.updateStatus(order.id, { status: this.newStatus() }).subscribe({
+      next: () => { this.toast.success('Order status updated'); this.showStatusModal.set(false); this.load(); },
+      error: () => { this.showStatusModal.set(false); }
     });
   }
   onPage(p: number) { this.page.set(p); this.load(); }

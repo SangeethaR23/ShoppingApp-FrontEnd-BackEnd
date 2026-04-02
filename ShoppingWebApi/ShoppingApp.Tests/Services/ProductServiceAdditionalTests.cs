@@ -49,7 +49,7 @@ public class ProductServiceAdditionalTests
     {
         _productRepoMock.Setup(r => r.GetQueryable()).Returns(() => ctx.Products);
         return new ProductService(_productRepoMock.Object, _categoryRepoMock.Object,
-            _imageRepoMock.Object, _inventoryRepoMock.Object, _mapper);
+            _imageRepoMock.Object, _inventoryRepoMock.Object, ctx, _mapper);
     }
 
     // ── GetAllAsync — sort variants ───────────────────────────────────────────

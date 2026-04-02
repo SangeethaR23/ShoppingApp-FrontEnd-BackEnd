@@ -62,7 +62,10 @@ export class CheckoutComponent implements OnInit {
     if (!code) return;
     this.promoSvc.apply({ promoCode: code, cartTotal: this.subtotal }).subscribe({
       next: p => { this.appliedPromo.set(p); this.promoError.set(''); this.toast.success(`Promo applied! -₹${p.discountAmount}`); },
-      error: () => { this.promoError.set('Invalid or expired promo code'); this.appliedPromo.set(null); }
+      error: (error) => { this.appliedPromo.set(null);
+        console.error(error?.error?.message)
+        this.toast.error(error?.error?.message || "Try Again");
+       }
     });
   }
 

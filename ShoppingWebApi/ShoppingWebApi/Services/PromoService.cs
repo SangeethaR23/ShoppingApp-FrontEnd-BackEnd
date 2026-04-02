@@ -24,9 +24,9 @@ namespace ShoppingWebApi.Services
             if (promo == null)
                 return null;
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.UtcNow.Date;
 
-            if (now < promo.StartDateUtc || now > promo.EndDateUtc)
+            if (now < promo.StartDateUtc.Date || now > promo.EndDateUtc.Date)
                 return null;
 
             if (promo.MinOrderAmount.HasValue && cartTotal < promo.MinOrderAmount.Value)
