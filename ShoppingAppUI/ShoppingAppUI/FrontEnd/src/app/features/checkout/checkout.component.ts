@@ -90,7 +90,10 @@ export class CheckoutComponent implements OnInit {
         this.showSuccess.set(true);
         this.cartSvc.clearLocal();
       },
-      error: () => this.placing.set(false)
+      error: (err) => {this.placing.set(false)
+        console.error(err.error.message)
+        // this.toast.error(err.error.message);
+      }
     });
   }
 

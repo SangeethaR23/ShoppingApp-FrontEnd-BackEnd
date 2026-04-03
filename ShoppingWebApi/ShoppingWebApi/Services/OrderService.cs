@@ -97,8 +97,15 @@ namespace ShoppingWebApi.Services
                     .Include(c => c.Items).ThenInclude(i => i.Product)
                     .FirstOrDefaultAsync(c => c.UserId == request.UserId, ct);
 
-                if (cart == null || cart.Items.Count == 0)
+                if (cart == null || cart.Items.Count==0)
+                {
                     throw new BusinessValidationException("Cart is empty.");
+                    //throw new BusinessValidationException("CartItmes shoud not be more than 10");
+                }
+                //if(cart.Items.Count>10)
+                //{
+                //    throw new BusinessValidationException("CartItmes shoud not be more than 10");
+                //}
 
                 var lines = cart.Items.Select(i => new
                 {

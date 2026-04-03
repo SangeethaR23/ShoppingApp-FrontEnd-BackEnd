@@ -31,8 +31,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       } else if (err.status === 0) {
         toast.error('Cannot connect to server. Please try again.');
       } else {
-        const msg = body?.detail || body?.title;
-        // toast.error(msg);
+        const msg = body?.detail || body?.title || body?.message;
+        // console.error("body")
+        // console.error(body)
+        toast.error(msg);
       }
       return throwError(() => err);
     })
