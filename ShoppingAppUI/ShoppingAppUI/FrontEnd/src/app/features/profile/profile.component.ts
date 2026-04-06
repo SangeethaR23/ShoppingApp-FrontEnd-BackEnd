@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { DecimalPipe, DatePipe } from '@angular/common';
+import { INDIA_STATES, getDistricts, getCities } from '../../core/data/india-locations.data';
 import { UserService } from '../../core/services/user.service';
 import { AddressService } from '../../core/services/address.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -60,11 +61,31 @@ export class ProfileComponent implements OnInit {
     phone: [''],
     line1: ['', Validators.required],
     line2: [''],
-    city: ['', Validators.required],
     state: ['', Validators.required],
+    district: ['', Validators.required],
+    city: ['', Validators.required],
     postalCode: ['', Validators.required],
     country: ['India', Validators.required]
   });
+
+  // Location dropdown data
+  readonly allStates = INDIA_STATES;
+  availableDistricts = signal<string[]>([]);
+  availableCities = signal<string[]>([]);
+
+  onStateChange(event: Event) {
+    const state = (event.target as HTMLSelectElement).value;
+    this.addressForm.patchValue({ district: '', city: '' });
+    this.availableDistricts.set(getDistricts(state));
+    this.availableCities.set([]);
+  }
+
+  onDistrictChange(event: Event) {
+    const district = (event.target as HTMLSelectElement).value;
+    const state = this.addressForm.get('state')!.value ?? '';
+    this.addressForm.patchValue({ city: '' });
+    this.availableCities.set(getCities(state, district));
+  }
 
   ngOnInit() {
     this.userSvc.getMe().subscribe(p => {
@@ -134,9 +155,13 @@ export class ProfileComponent implements OnInit {
   openAddressForm(addr?: AddressReadDto) {
     this.editingAddress.set(addr ?? null);
     if (addr) {
+      this.availableDistricts.set(getDistricts(addr.state ?? ''));
+      this.availableCities.set(getCities(addr.state ?? '', (addr as any).district ?? ''));
       this.addressForm.patchValue(addr as any);
     } else {
       this.addressForm.reset({ country: 'India' });
+      this.availableDistricts.set([]);
+      this.availableCities.set([]);
     }
     this.showAddressForm.set(true);
   }

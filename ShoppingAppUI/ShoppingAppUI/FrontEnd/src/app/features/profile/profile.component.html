@@ -238,23 +238,51 @@
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
             <div class="form-group">
-              <label class="form-label">City *</label>
-              <input formControlName="city" type="text" class="form-control">
+              <label class="form-label">State *</label>
+              <select formControlName="state" class="form-control" (change)="onStateChange($event)">
+                <option value="">-- Select State --</option>
+                @for (s of allStates; track s) {
+                  <option [value]="s">{{ s }}</option>
+                }
+              </select>
+              @if (addressForm.get('state')!.invalid && addressForm.get('state')!.touched) {
+                <span class="form-error">Required</span>
+              }
             </div>
             <div class="form-group">
-              <label class="form-label">State *</label>
-              <input formControlName="state" type="text" class="form-control">
+              <label class="form-label">District *</label>
+              <select formControlName="district" class="form-control" (change)="onDistrictChange($event)" [attr.disabled]="availableDistricts().length === 0 ? true : null">
+                <option value="">-- Select District --</option>
+                @for (d of availableDistricts(); track d) {
+                  <option [value]="d">{{ d }}</option>
+                }
+              </select>
+              @if (addressForm.get('district')!.invalid && addressForm.get('district')!.touched) {
+                <span class="form-error">Required</span>
+              }
             </div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
             <div class="form-group">
+              <label class="form-label">City *</label>
+              <select formControlName="city" class="form-control" [attr.disabled]="availableCities().length === 0 ? true : null">
+                <option value="">-- Select City --</option>
+                @for (c of availableCities(); track c) {
+                  <option [value]="c">{{ c }}</option>
+                }
+              </select>
+              @if (addressForm.get('city')!.invalid && addressForm.get('city')!.touched) {
+                <span class="form-error">Required</span>
+              }
+            </div>
+            <div class="form-group">
               <label class="form-label">Postal Code *</label>
               <input formControlName="postalCode" type="text" class="form-control">
             </div>
-            <div class="form-group">
-              <label class="form-label">Country *</label>
-              <input formControlName="country" type="text" class="form-control">
-            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Country *</label>
+            <input formControlName="country" type="text" class="form-control">
           </div>
           <div class="modal-footer" style="padding:0;margin-top:1rem">
             <button type="button" class="btn btn-secondary" (click)="showAddressForm.set(false)">Cancel</button>
