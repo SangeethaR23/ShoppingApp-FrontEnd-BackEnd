@@ -134,7 +134,28 @@ namespace ShoppingWebApi.Services
                         throw new BusinessValidationException($"Insufficient inventory for product {l.ProductId}. Available: {inv.Quantity}, Requested: {l.Quantity}");
                 }
 
-                // ? 5. SubTotal, Shipping, Discount
+                // ✅ 4b. Per-order limit: max 3 of same item | Monthly limit: max 5 of same item
+                var monthStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+
+                var monthlyQtyMap = await _orderItemRepo.GetQueryable()
+                    .Where(oi => productIds.Contains(oi.ProductId)
+                              && oi.Order.UserId == request.UserId
+                              && oi.Order.PlacedAtUtc >= monthStart
+                              && oi.Order.Status != OrderStatus.Cancelled)
+                    .GroupBy(oi => oi.ProductId)
+                    .Select(g => new { ProductId = g.Key, TotalQty = g.Sum(x => x.Quantity) })
+                    .ToDictionaryAsync(x => x.ProductId, x => x.TotalQty, ct);
+
+                foreach (var l in lines)
+                {
+
+                    var alreadyThisMonth = monthlyQtyMap.TryGetValue(l.ProductId, out var mq) ? mq : 0;
+                    if (alreadyThisMonth + l.Quantity > 3)
+                        throw new BusinessValidationException(
+                            $"You cannot order more than 3 units of '{l.ProductName}' in a month. Already ordered: {alreadyThisMonth}/3.");
+                }
+
+                // ✅ 5. SubTotal, Shipping, Discount
                 var subTotal = lines.Sum(l => l.UnitPrice * l.Quantity);
                 var shipping = request.ShippingFee ?? 0m;
                 var discount = request.Discount ?? 0m;
@@ -431,6 +452,13 @@ namespace ShoppingWebApi.Services
 
                 if (!isAdmin && order.UserId != userId)
                     throw new ForbiddenException("You cannot cancel another user's order.");
+
+                if (!isAdmin)
+                {
+                    var daysSincePlaced = (DateTime.UtcNow - order.PlacedAtUtc).TotalDays;
+                    if (daysSincePlaced > 1)
+                        throw new BusinessValidationException("Orders can only be cancelled within 1 days of placement.");
+                }
 
                 if (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered)
                     throw new BusinessValidationException($"Order already {order.Status}, cannot cancel.");

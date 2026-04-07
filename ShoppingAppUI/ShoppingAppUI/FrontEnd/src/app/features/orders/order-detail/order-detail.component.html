@@ -13,6 +13,9 @@
         <!-- @if (canCancel()) {
           <button class="btn btn-danger" (click)="showCancelConfirm.set(true)">✕ Cancel Order</button>
         } -->
+        @if (canCancel()) {
+          <button class="btn btn-danger" (click)="showCancelConfirm.set(true)">✕ Cancel Order</button>
+        }
         @if (canReturn()) {
           <button class="btn btn-outline" (click)="showReturnConfirm.set(true)">↩ Return Order</button>
         }

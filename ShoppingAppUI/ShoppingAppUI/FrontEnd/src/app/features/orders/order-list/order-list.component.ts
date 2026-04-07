@@ -57,8 +57,10 @@ export class OrderListComponent implements OnInit {
 
   onPage(p: number) { this.page.set(p); this.load(); }
 
-  canCancel(status: string) {
-    return ['Pending', 'Confirmed'].includes(status);
+  canCancel(order: OrderSummaryDto) {
+    if (!['Pending', 'Confirmed'].includes(order.status)) return false;
+    const days = (Date.now() - new Date(order.placedAtUtc).getTime()) / (1000 * 60 * 60 * 24);
+    return days <= 3;
   }
 
   confirmCancel(id: number) { this.cancelTarget.set(id); this.showConfirm.set(true); }

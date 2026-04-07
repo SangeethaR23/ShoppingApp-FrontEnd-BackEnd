@@ -19,7 +19,7 @@
               <div class="qty-ctrl">
                 <button class="btn btn-secondary btn-sm" (click)="updateQty(item.productId, item.quantity - 1)">−</button>
                 <span class="qty-val">{{ item.quantity }}</span>
-                <button class="btn btn-secondary btn-sm" (click)="updateQty(item.productId, item.quantity + 1)">+</button>
+                <button class="btn btn-secondary btn-sm" (click)="updateQty(item.productId, item.quantity + 1)" [disabled]="item.quantity >= 3">+</button>
               </div>
               <div class="item-total">₹{{ item.lineTotal | number:'1.0-0' }}</div>
               <button class="btn btn-danger btn-sm" (click)="confirmRemove(item.productId)" title="Remove">🗑</button>

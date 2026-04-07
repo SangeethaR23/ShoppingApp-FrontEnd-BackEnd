@@ -29,7 +29,12 @@ export class OrderDetailComponent implements OnInit {
     this.orderSvc.getById(id).subscribe(o => this.order.set(o));
   }
 
-  canCancel() { return ['Pending', 'Confirmed'].includes(this.order()?.status ?? ''); }
+  canCancel() {
+    const o = this.order();
+    if (!o || !['Pending', 'Confirmed'].includes(o.status)) return false;
+    const days = (Date.now() - new Date(o.placedAtUtc).getTime()) / (1000 * 60 * 60 * 24);
+    return days <= 3;
+  }
   canReturn() { return this.order()?.status === 'Delivered'; }
 
   doCancel() {
