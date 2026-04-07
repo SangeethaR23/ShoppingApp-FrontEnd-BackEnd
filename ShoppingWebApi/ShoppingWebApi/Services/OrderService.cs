@@ -456,8 +456,8 @@ namespace ShoppingWebApi.Services
                 if (!isAdmin)
                 {
                     var daysSincePlaced = (DateTime.UtcNow - order.PlacedAtUtc).TotalDays;
-                    if (daysSincePlaced > 1)
-                        throw new BusinessValidationException("Orders can only be cancelled within 1 days of placement.");
+                    if (daysSincePlaced > 3)
+                        throw new BusinessValidationException("Orders can only be cancelled within 3 days of placement.");
                 }
 
                 if (order.Status == OrderStatus.Shipped || order.Status == OrderStatus.Delivered)
