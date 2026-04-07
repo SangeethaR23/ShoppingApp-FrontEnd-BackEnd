@@ -83,6 +83,11 @@
                 <button class="remove-item-btn" (click)="removeFromCart(item.productId)" title="Remove">✕</button>
               </div>
             </div>
+            @if (item.quantity > 3) {
+              <p style="color:var(--danger,#e53e3e);font-size:0.78rem;margin:-0.25rem 0 0.5rem 0">
+                ⚠ Max 3 units per order for "{{ item.productName }}"
+              </p>
+            }
           }
           <div class="summary-divider"></div>
 
@@ -110,7 +115,7 @@
           <div class="summary-divider"></div>
           <div class="summary-row total-row"><span>Total</span><span>₹{{ total | number:'1.0-0' }}</span></div>
 
-          <button class="btn-place" [disabled]="placing()" (click)="placeOrder()">
+          <button class="btn-place" [disabled]="placing() || (cart?.items ?? []).some(i => i.quantity > 3)" (click)="placeOrder()">
             @if (placing()) { Placing Order... } @else { 🛍️ Place Order }
           </button>
         </div>

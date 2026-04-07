@@ -38,7 +38,7 @@
           </div>
           <div class="order-actions">
             <button class="btn btn-outline btn-sm" [routerLink]="['/orders', order.id]">👁 View Details</button>
-            @if (canCancel(order.status)) {
+            @if (canCancel(order)) {
               <button class="btn btn-danger btn-sm" (click)="confirmCancel(order.id)">✕ Cancel Order</button>
             }
           </div>
